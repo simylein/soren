@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.13)
+
+# Correct path to your pico-sdk
+set(PICO_SDK_PATH "${CMAKE_SOURCE_DIR}/pico-sdk")
+
+# Include the SDK's import script
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+# Define your project
+project(luna_project)
+
+# Initialize the SDK
+pico_sdk_init()
+
+# Add your executable
+add_executable(luna main.c)
+
+# Link libraries
+target_link_libraries(luna pico_stdlib)
+
+# Enable extra outputs (e.g., UF2 file)
+pico_add_extra_outputs(luna)
