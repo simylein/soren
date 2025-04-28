@@ -2,6 +2,8 @@ _deps
 .vscode
 CMakeFiles
 generated
+pico_extras
+pico-extras
 pico-sdk
 picotool
 pioasm
