@@ -16,7 +16,7 @@ int main(void) {
 		time_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
-		printf("time %02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, temperature, humidity);
+		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
 
 		sleep_ms(10000);
 	}

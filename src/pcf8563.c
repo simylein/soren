@@ -24,7 +24,7 @@ void pcf8563_init(void) {
 
 time_t pcf8563_time(void) {
 	uint8_t cmd = 0x02;
-	uint8_t data[2];
+	uint8_t data[3];
 	time_t time;
 
 	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, &cmd, sizeof(cmd), true) != sizeof(cmd)) {
@@ -37,8 +37,9 @@ time_t pcf8563_time(void) {
 		return time;
 	}
 
-	time.minute = bcd_to_dec(data[0] & 0x7f);
-	time.hour = bcd_to_dec(data[1] & 0x3f);
+	time.second = bcd_to_dec(data[0] & 0x7f);
+	time.minute = bcd_to_dec(data[1] & 0x7f);
+	time.hour = bcd_to_dec(data[2] & 0x3f);
 
 	return time;
 }
