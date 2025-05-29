@@ -50,7 +50,7 @@ rtc_t pcf8563_time(void) {
 	return time;
 }
 
-void pcf8563_alarm(uint8_t minutes) {
+void pcf8563_alarm_schedule(uint8_t minutes) {
 	uint8_t time_reg = 0x03;
 	uint8_t time_data[1];
 	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, &time_reg, sizeof(time_reg), true) != sizeof(time_reg) ||
@@ -72,6 +72,25 @@ void pcf8563_alarm(uint8_t minutes) {
 	uint8_t ctrl2_data[2] = {ctrl2_reg, 0x02};
 	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, ctrl2_data, sizeof(ctrl2_data), false) != sizeof(ctrl2_data)) {
 		printf("pcf8563: failed to enable alarm interrupt\n");
+		return;
+	}
+}
+
+void pcf8563_alarm_clear(void) {
+	uint8_t reg = 0x01;
+	uint8_t val;
+	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, &reg, sizeof(reg), true) != sizeof(reg) ||
+			i2c_read_blocking(pcf8563_i2c, pcf8563_addr, &val, sizeof(val), false) != sizeof(val)) {
+		printf("pcf8563: failed to read alarm register\n");
+		return;
+	}
+
+	val &= ~(1 << 3);
+	val |= (1 << 1);
+
+	uint8_t data[2] = {reg, val};
+	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, data, sizeof(data), false) != sizeof(data)) {
+		printf("pcf8563: failed to clear alarm interrupt\n");
 		return;
 	}
 }

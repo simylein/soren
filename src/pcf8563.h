@@ -12,4 +12,6 @@ typedef struct rtc_t {
 
 void pcf8563_init(void);
 rtc_t pcf8563_time(void);
-void pcf8563_alarm(uint8_t minutes);
+
+void pcf8563_alarm_schedule(uint8_t minutes);
+void pcf8563_alarm_clear(void);
