@@ -10,6 +10,6 @@ pioasm
 pioasm-install
 cmake_install.cmake
 CMakeCache.txt
-luna.*
+soren.*
 Makefile
 pico_flash_region.ld

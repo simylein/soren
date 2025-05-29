@@ -6,15 +6,15 @@ set(PICO_EXTRAS_PATH "${CMAKE_SOURCE_DIR}/pico-extras")
 include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include(${PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
-project(luna_project)
+project(soren_project)
 
 pico_sdk_init()
 
-add_executable(luna main.c)
+add_executable(soren main.c rp2040.c si7021.c)
 
-pico_enable_stdio_usb(luna 1)
-pico_enable_stdio_uart(luna 0)
+pico_enable_stdio_usb(soren 1)
+pico_enable_stdio_uart(soren 0)
 
-target_link_libraries(luna pico_stdlib hardware_adc hardware_sleep)
+target_link_libraries(soren pico_stdlib hardware_adc hardware_i2c hardware_spi hardware_sleep)
 
-pico_add_extra_outputs(luna)
+pico_add_extra_outputs(soren)

@@ -1,4 +1,4 @@
-# luna
+# soren
 
 ### rp2040 data sheet
 
@@ -32,5 +32,5 @@ make
 ### copy executable
 
 ```sh
-cp luna.uf2 /Volumes/RPI-RP2
+cp soren.uf2 /Volumes/RPI-RP2
 ```
