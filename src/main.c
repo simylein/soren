@@ -15,6 +15,8 @@ int main(void) {
 	sx1278_init();
 
 	while (true) {
+		rp2040_led_blink(10, 50);
+
 		rtc_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
