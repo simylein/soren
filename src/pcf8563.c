@@ -22,10 +22,10 @@ void pcf8563_init(void) {
 	gpio_pull_up(pcf8563_scl_pin);
 }
 
-time_t pcf8563_time(void) {
+rtc_t pcf8563_time(void) {
 	uint8_t cmd = 0x02;
 	uint8_t data[3];
-	time_t time;
+	rtc_t time;
 
 	if (i2c_write_blocking(pcf8563_i2c, pcf8563_addr, &cmd, sizeof(cmd), true) != sizeof(cmd)) {
 		printf("pcf8563: failed to write time command\n");
