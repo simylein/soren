@@ -15,14 +15,14 @@ int main(void) {
 	sx1278_init();
 
 	while (true) {
-		rp2040_led_set(1);
-
 		rtc_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
 		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
 
+		rp2040_led_set(1);
 		sx1278_lora();
+
 		sx1278_frequency(433 * 1000 * 1000);
 		sx1278_tx_power(2);
 		sx1278_coding_rate(5);
@@ -32,6 +32,7 @@ int main(void) {
 		const uint8_t data[11] = "hello world";
 		sx1278_send(data, sizeof(data), 2000);
 
+		sx1278_sleep();
 		rp2040_led_set(0);
 
 		pcf8563_alarm_schedule(1);

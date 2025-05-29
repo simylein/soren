@@ -2,7 +2,9 @@
 
 void sx1278_init(void);
 
-void sx1278_lora();
+void sx1278_lora(void);
+void sx1278_sleep(void);
+
 void sx1278_frequency(uint32_t freq_hz);
 void sx1278_tx_power(uint8_t power_dbm);
 void sx1278_coding_rate(uint8_t cr);

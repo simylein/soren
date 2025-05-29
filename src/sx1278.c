@@ -46,11 +46,9 @@ uint8_t sx1278_read_register(uint8_t reg) {
 	return rx_buf[1];
 }
 
-void sx1278_lora(void) {
-	sx1278_write_reg(0x01, 0x00);
-	sx1278_write_reg(0x01, 0x80);
-	sx1278_write_reg(0x01, 0x81);
-}
+void sx1278_lora(void) { sx1278_write_reg(0x01, 0x81); }
+
+void sx1278_sleep(void) { sx1278_write_reg(0x01, 0x00); }
 
 void sx1278_frequency(uint32_t freq_hz) {
 	uint32_t frf = (uint64_t)freq_hz * (1 << 19) / (32 * 1000 * 1000);
