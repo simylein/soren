@@ -10,7 +10,7 @@ project(soren_project)
 
 pico_sdk_init()
 
-add_executable(soren main.c rp2040.c si7021.c)
+add_executable(soren src/main.c src/rp2040.c src/si7021.c)
 
 pico_enable_stdio_usb(soren 1)
 pico_enable_stdio_uart(soren 0)
