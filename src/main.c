@@ -19,6 +19,7 @@ int main(void) {
 		float humidity = si7021_humidity();
 		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
 
-		sleep_ms(10000);
+		sleep_goto_dormant_until_pin(pcf8563_int_pin, true, false);
+		printf("waking up from dormant sleep\n");
 	}
 }

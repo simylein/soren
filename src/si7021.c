@@ -1,5 +1,5 @@
-#include "hardware/i2c.h"
-#include "pico/stdlib.h"
+#include <hardware/i2c.h>
+#include <pico/stdlib.h>
 #include <stdio.h>
 
 i2c_inst_t *si7021_i2c = i2c1;

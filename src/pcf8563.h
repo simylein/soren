@@ -2,6 +2,8 @@
 
 #include <pico/stdlib.h>
 
+extern const uint pcf8563_int_pin;
+
 typedef struct rtc_t {
 	uint8_t hour;
 	uint8_t minute;
