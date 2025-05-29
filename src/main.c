@@ -15,16 +15,23 @@ int main(void) {
 	sx1278_init();
 
 	while (true) {
+		rp2040_led_set(1);
+
 		rtc_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
 		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
 
-		uint8_t version = sx1278_read_register(0x42);
-		printf("sx1278: version 0x%02X\n", version);
+		sx1278_lora();
+		sx1278_frequency(433 * 1000 * 1000);
+		sx1278_tx_power(2);
+		sx1278_coding_rate(5);
+		sx1278_bandwidth(125 * 1000);
+		sx1278_spreading_factor(7);
 
-		rp2040_led_set(1);
-		sleep_ms(2000);
+		const uint8_t data[11] = "hello world";
+		sx1278_send(data, sizeof(data), 2000);
+
 		rp2040_led_set(0);
 
 		pcf8563_alarm_schedule(1);
