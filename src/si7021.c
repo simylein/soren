@@ -20,11 +20,11 @@ void si7021_init(void) {
 }
 
 float si7021_temperature(void) {
-	uint8_t cmd = 0xe3;
+	uint8_t reg = 0xe3;
 	uint8_t data[2];
 
-	if (i2c_write_blocking(si7021_i2c, si7021_addr, &cmd, sizeof(cmd), true) != sizeof(cmd)) {
-		printf("si7021: failed to write temperature command\n");
+	if (i2c_write_blocking(si7021_i2c, si7021_addr, &reg, sizeof(reg), true) != sizeof(reg)) {
+		printf("si7021: failed to write temperature register\n");
 		return -999.0f;
 	}
 
@@ -41,11 +41,11 @@ float si7021_temperature(void) {
 }
 
 float si7021_humidity(void) {
-	uint8_t cmd = 0xe5;
+	uint8_t reg = 0xe5;
 	uint8_t data[2];
 
-	if (i2c_write_blocking(si7021_i2c, si7021_addr, &cmd, 1, true) != 1) {
-		printf("si7021: failed to write humidity command\n");
+	if (i2c_write_blocking(si7021_i2c, si7021_addr, &reg, 1, true) != 1) {
+		printf("si7021: failed to write humidity register\n");
 		return -999.0f;
 	}
 
