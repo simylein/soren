@@ -12,9 +12,12 @@ const uint8_t si7021_addr = 0x40;
 void si7021_init(void) {
 	printf("si7021: initialising gpio %d and %d\n", si7021_sda_pin, si7021_scl_pin);
 	printf("si7021: initialising address 0x%x\n", si7021_addr);
+
 	i2c_init(si7021_i2c, 100 * 1000);
+
 	gpio_set_function(si7021_sda_pin, GPIO_FUNC_I2C);
 	gpio_set_function(si7021_scl_pin, GPIO_FUNC_I2C);
+
 	gpio_pull_up(si7021_sda_pin);
 	gpio_pull_up(si7021_scl_pin);
 }

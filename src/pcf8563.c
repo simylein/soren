@@ -18,11 +18,16 @@ uint8_t dec_to_bcd(uint8_t val) { return ((val / 10) << 4) | (val % 10); }
 void pcf8563_init(void) {
 	printf("pcf8563: initialising gpio %d %d and %d\n", pcf8563_sda_pin, pcf8563_scl_pin, pcf8563_int_pin);
 	printf("pcf8563: initialising address 0x%x\n", pcf8563_addr);
+
 	i2c_init(pcf8563_i2c, 100 * 1000);
+
 	gpio_set_function(pcf8563_sda_pin, GPIO_FUNC_I2C);
 	gpio_set_function(pcf8563_scl_pin, GPIO_FUNC_I2C);
+
 	gpio_init(pcf8563_int_pin);
+
 	gpio_set_dir(pcf8563_int_pin, GPIO_IN);
+
 	gpio_pull_up(pcf8563_sda_pin);
 	gpio_pull_up(pcf8563_scl_pin);
 	gpio_pull_up(pcf8563_int_pin);

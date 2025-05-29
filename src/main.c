@@ -1,6 +1,7 @@
 #include "pcf8563.h"
 #include "rp2040.h"
 #include "si7021.h"
+#include "sx1278.h"
 #include <hardware/clocks.h>
 #include <pico/sleep.h>
 #include <pico/stdlib.h>
@@ -11,12 +12,16 @@ int main(void) {
 	rp2040_led_init();
 	pcf8563_init();
 	si7021_init();
+	sx1278_init();
 
 	while (true) {
 		rtc_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
 		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
+
+		uint8_t version = sx1278_read_register(0x42);
+		printf("sx1278: version 0x%02X\n", version);
 
 		rp2040_led_set(1);
 		sleep_ms(2000);
@@ -31,6 +36,7 @@ int main(void) {
 		rp2040_led_init();
 		pcf8563_init();
 		si7021_init();
+		sx1278_init();
 
 		pcf8563_alarm_clear();
 		printf("woke up from dormant sleep\n");
