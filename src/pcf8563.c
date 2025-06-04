@@ -7,7 +7,7 @@ i2c_inst_t *pcf8563_i2c = i2c0;
 
 const uint pcf8563_sda_pin = 0;
 const uint pcf8563_scl_pin = 1;
-const uint pcf8563_int_pin = 4;
+const uint pcf8563_int_pin = 2;
 
 const uint8_t pcf8563_addr = 0x51;
 

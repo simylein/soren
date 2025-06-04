@@ -6,6 +6,7 @@
 #include <pico/sleep.h>
 #include <pico/stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(void) {
 	rp2040_stdio_init();
@@ -31,8 +32,10 @@ int main(void) {
 		sx1278_bandwidth(125 * 1000);
 		sx1278_spreading_factor(7);
 
-		const uint8_t data[11] = "hello world";
-		sx1278_send(data, sizeof(data), 2000);
+		uint8_t data[8];
+		memcpy(&data[0], &temperature, sizeof(temperature));
+		memcpy(&data[4], &humidity, sizeof(humidity));
+		sx1278_send(data, sizeof(data), 4000);
 
 		sx1278_sleep();
 		rp2040_led_set(0);

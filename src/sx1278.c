@@ -173,7 +173,11 @@ void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
 	sx1278_write_reg(0x22, length);
 	sx1278_write_reg(0x01, 0x83);
 
-	printf("sending data %.*s length %d\n", length, data, length);
+	printf("sending data ");
+	for (uint8_t ind = 0; ind < length; ind++) {
+		printf("%2x", data[ind]);
+	}
+	printf(" length %d\n", length);
 
 	uint16_t time_spent = 0;
 	while (true) {

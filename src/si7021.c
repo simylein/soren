@@ -4,8 +4,8 @@
 
 i2c_inst_t *si7021_i2c = i2c1;
 
-const uint si7021_sda_pin = 2;
-const uint si7021_scl_pin = 3;
+const uint si7021_sda_pin = 6;
+const uint si7021_scl_pin = 7;
 
 const uint8_t si7021_addr = 0x40;
 
