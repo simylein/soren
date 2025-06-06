@@ -11,6 +11,7 @@
 int main(void) {
 	rp2040_stdio_init();
 	rp2040_led_init();
+	rp2040_adc_init();
 	pcf8563_init();
 	si7021_init();
 	sx1278_init();
@@ -21,7 +22,10 @@ int main(void) {
 		rtc_t time = pcf8563_time();
 		float temperature = si7021_temperature();
 		float humidity = si7021_humidity();
-		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f\n", time.hour, time.minute, time.second, temperature, humidity);
+		float photovoltaic = rp2040_photovoltaic();
+		float battery = rp2040_battery();
+		printf("time %02d:%02d:%02d temperature %.2f humidity %.2f photovoltaic %.3f battery %.3f\n", time.hour, time.minute,
+					 time.second, temperature, humidity, photovoltaic, battery);
 
 		rp2040_led_set(1);
 		sx1278_lora();
@@ -32,9 +36,11 @@ int main(void) {
 		sx1278_bandwidth(125 * 1000);
 		sx1278_spreading_factor(7);
 
-		uint8_t data[8];
+		uint8_t data[16];
 		memcpy(&data[0], &temperature, sizeof(temperature));
 		memcpy(&data[4], &humidity, sizeof(humidity));
+		memcpy(&data[8], &photovoltaic, sizeof(photovoltaic));
+		memcpy(&data[12], &battery, sizeof(battery));
 		sx1278_send(data, sizeof(data), 4000);
 
 		sx1278_sleep();
