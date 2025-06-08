@@ -38,14 +38,15 @@ void rp2040_adc_init() {
 	adc_gpio_init(rp2040_battery_pin);
 }
 
-void rp2040_led_set(int value) { gpio_put(rp2040_led_pin, value); }
-
-void rp2040_led_blink(uint amount, uint32_t ms) {
+void rp2040_led_blink(uint amount, uint8_t ms, bool cooloff) {
 	for (uint blinks = 0; blinks < amount; blinks++) {
 		gpio_put(rp2040_led_pin, 1);
 		sleep_ms(ms);
 		gpio_put(rp2040_led_pin, 0);
 		sleep_ms(ms);
+	}
+	if (cooloff) {
+		sleep_ms(ms * 4);
 	}
 }
 

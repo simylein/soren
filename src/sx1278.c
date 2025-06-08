@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 spi_inst_t *sx1278_spi = spi0;
+const uint sx1278_spi_speed = 1 * 1000 * 1000;
 
 const uint sx1278_miso_pin = 16;
 const uint sx1278_nss_pin = 17;
@@ -14,7 +15,7 @@ void sx1278_init(void) {
 	printf("sx1278: initialising gpio %d %d %d %d and %d\n", sx1278_miso_pin, sx1278_nss_pin, sx1278_scl_pin, sx1278_mosi_pin,
 				 sx1278_dio0_pin);
 
-	spi_init(sx1278_spi, 1 * 1000 * 1000);
+	spi_init(sx1278_spi, sx1278_spi_speed);
 
 	gpio_set_function(sx1278_scl_pin, GPIO_FUNC_SPI);
 	gpio_set_function(sx1278_mosi_pin, GPIO_FUNC_SPI);
@@ -25,14 +26,6 @@ void sx1278_init(void) {
 
 	gpio_set_dir(sx1278_nss_pin, GPIO_OUT);
 	gpio_set_dir(sx1278_dio0_pin, GPIO_IN);
-
-	gpio_put(sx1278_nss_pin, 1);
-}
-
-void sx1278_write_reg(uint8_t reg, uint8_t value) {
-	gpio_put(sx1278_nss_pin, 0);
-	spi_write_blocking(sx1278_spi, (uint8_t[]){reg | 0x80, value}, 2);
-	gpio_put(sx1278_nss_pin, 1);
 }
 
 uint8_t sx1278_read_register(uint8_t reg) {
@@ -40,37 +33,101 @@ uint8_t sx1278_read_register(uint8_t reg) {
 	uint8_t rx_buf[2];
 
 	gpio_put(sx1278_nss_pin, 0);
-	spi_write_read_blocking(sx1278_spi, tx_buf, rx_buf, 2);
+	if (spi_write_read_blocking(sx1278_spi, tx_buf, rx_buf, sizeof(rx_buf)) != sizeof(rx_buf)) {
+		printf("sx1278: failed to read register 0x%02x\n", reg);
+	}
 	gpio_put(sx1278_nss_pin, 1);
 
 	return rx_buf[1];
 }
 
-void sx1278_lora(void) { sx1278_write_reg(0x01, 0x81); }
+void sx1278_write_register(uint8_t reg, uint8_t value) {
+	uint8_t tx_buf[2] = {reg | 0x80, value};
 
-void sx1278_sleep(void) { sx1278_write_reg(0x01, 0x00); }
-
-void sx1278_frequency(uint32_t freq_hz) {
-	uint32_t frf = (uint64_t)freq_hz * (1 << 19) / (32 * 1000 * 1000);
-
-	sx1278_write_reg(0x06, (frf >> 16) & 0xff);
-	sx1278_write_reg(0x07, (frf >> 8) & 0xff);
-	sx1278_write_reg(0x08, frf & 0xff);
-
-	printf("set frequency to %u hz and frf 0x%6x\n", freq_hz, frf);
+	gpio_put(sx1278_nss_pin, 0);
+	if (spi_write_blocking(sx1278_spi, tx_buf, sizeof(tx_buf)) != sizeof(tx_buf)) {
+		printf("sx1278: failed to write register 0x%02x\n", reg);
+	}
+	gpio_put(sx1278_nss_pin, 1);
 }
 
-void sx1278_tx_power(uint8_t power_dbm) {
-	if (power_dbm < 2) {
-		power_dbm = 2;
-	} else if (power_dbm > 17) {
-		power_dbm = 17;
+void sx1278_sleep(void) {
+	uint16_t time_us = 0;
+	sx1278_write_register(0x01, 0x80);
+	while ((sx1278_read_register(0x01) & 0x07) != 0x00) {
+		sleep_us(50);
+		time_us += 50;
+		if (time_us > 2000) {
+			printf("sx1278: timeout reached waiting for sleep mode\n");
+			break;
+		}
+	}
+	printf("sx1278: sleep op_mode 0x%02x\n", sx1278_read_register(0x01));
+}
+
+void sx1278_standby(void) {
+	uint16_t time_us = 0;
+	sx1278_write_register(0x01, 0x81);
+	while ((sx1278_read_register(0x01) & 0x07) != 0x01) {
+		sleep_us(50);
+		time_us += 50;
+		if (time_us > 2000) {
+			printf("sx1278: timeout reached waiting for standby mode\n");
+			break;
+		}
+	}
+	printf("sx1278: standby op_mode 0x%02x\n", sx1278_read_register(0x01));
+}
+
+void sx1278_transfer(void) {
+	uint16_t time_us = 0;
+	sx1278_write_register(0x01, 0x83);
+	while ((sx1278_read_register(0x01) & 0x07) != 0x03) {
+		sleep_us(50);
+		time_us += 50;
+		if (time_us > 2000) {
+			printf("sx1278: timeout reached waiting for transfer mode\n");
+			break;
+		}
+	}
+	printf("sx1278: transfer op_mode 0x%02x\n", sx1278_read_register(0x01));
+}
+
+void sx1278_receive(void) {
+	uint16_t time_us = 0;
+	sx1278_write_register(0x01, 0x86);
+	while ((sx1278_read_register(0x01) & 0x07) != 0x06) {
+		sleep_us(50);
+		time_us += 50;
+		if (time_us > 2000) {
+			printf("sx1278: timeout reached waiting for receive mode\n");
+			break;
+		}
+	}
+	printf("sx1278: receive op_mode 0x%02x\n", sx1278_read_register(0x01));
+}
+
+void sx1278_frequency(uint32_t frequency) {
+	uint32_t frf = (uint64_t)frequency * (1 << 19) / (32 * 1000 * 1000);
+
+	sx1278_write_register(0x06, (frf >> 16) & 0xff);
+	sx1278_write_register(0x07, (frf >> 8) & 0xff);
+	sx1278_write_register(0x08, frf & 0xff);
+	printf("sx1278: frequency %u frf 0x%02x%02x%02x\n", frequency, sx1278_read_register(0x06), sx1278_read_register(0x07),
+				 sx1278_read_register(0x08));
+}
+
+void sx1278_tx_power(uint8_t power) {
+	if (power < 2) {
+		power = 2;
+	} else if (power > 17) {
+		power = 17;
 	}
 
-	uint8_t pa_config = 0x80 | (power_dbm - 2);
-	sx1278_write_reg(0x09, pa_config);
+	uint8_t pa_config = 0x80 | (power - 2);
 
-	printf("set tx power to %d dbm pa_config 0x%2x\n", power_dbm, pa_config);
+	sx1278_write_register(0x09, pa_config);
+	printf("sx1278: tx power %hhu pa_config 0x%02x\n", power, sx1278_read_register(0x09));
 }
 
 void sx1278_coding_rate(uint8_t cr) {
@@ -86,15 +143,14 @@ void sx1278_coding_rate(uint8_t cr) {
 	uint8_t cr_bits = (cr - 4) << 1;
 	modem_config_1 |= cr_bits;
 
-	sx1278_write_reg(0x1d, modem_config_1);
-
-	printf("set coding rate to 4/%d modem_config_1 0x%2x\n", cr, modem_config_1);
+	sx1278_write_register(0x1d, modem_config_1);
+	printf("sx1278: coding rate 4/%d modem_config_1 0x%02x\n", cr, sx1278_read_register(0x1d));
 }
 
-void sx1278_bandwidth(uint32_t bandwidth_hz) {
+void sx1278_bandwidth(uint32_t bandwidth) {
 	uint8_t bw_bits;
 
-	switch (bandwidth_hz) {
+	switch (bandwidth) {
 	case 7800:
 		bw_bits = 0x0;
 		break;
@@ -134,9 +190,8 @@ void sx1278_bandwidth(uint32_t bandwidth_hz) {
 
 	modem_config_1 = (modem_config_1 & 0x0f) | (bw_bits << 4);
 
-	sx1278_write_reg(0x1d, modem_config_1);
-
-	printf("set bandwidth to %u hz bw_bits 0x%1x modem_config_1 0x%2x\n", bandwidth_hz, bw_bits, modem_config_1);
+	sx1278_write_register(0x1d, modem_config_1);
+	printf("sx1278: bandwidth %u modem_config_1 0x%02x\n", bandwidth, sx1278_read_register(0x1d));
 }
 
 void sx1278_spreading_factor(uint8_t sf) {
@@ -151,18 +206,28 @@ void sx1278_spreading_factor(uint8_t sf) {
 	modem_config_2 &= 0x0f;
 	modem_config_2 |= (sf << 4);
 
-	sx1278_write_reg(0x1e, modem_config_2);
+	sx1278_write_register(0x1e, modem_config_2);
+	printf("sx1278: spreading factor %d modem_config_2 0x%02x\n", sf, sx1278_read_register(0x1e));
+}
 
-	printf("set spreading factor to sf %d modem_config_2 0x%2x\n", sf, modem_config_2);
+void sx1278_checksum(bool crc) {
+	uint8_t modem_config_2 = sx1278_read_register(0x1e);
+
+	if (crc) {
+		modem_config_2 |= 0x04;
+	} else {
+		modem_config_2 &= ~0x04;
+	}
+
+	sx1278_write_register(0x1e, modem_config_2);
+	printf("sx1278: checksum %s modem_config_2 0x%02x\n", crc ? "true" : "false", sx1278_read_register(0x1e));
 }
 
 void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
-	sx1278_write_reg(0x01, 0x81);
+	sx1278_write_register(0x0d, 0x80);
+	sx1278_write_register(0x0e, 0x80);
 
-	sx1278_write_reg(0x0d, 0x80);
-	sx1278_write_reg(0x0e, 0x80);
-
-	sx1278_write_reg(0x40, 0x00);
+	sx1278_write_register(0x40, 0x00);
 
 	gpio_put(sx1278_nss_pin, 0);
 	uint8_t header = 0x80;
@@ -170,28 +235,29 @@ void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
 	spi_write_blocking(sx1278_spi, data, length);
 	gpio_put(sx1278_nss_pin, 1);
 
-	sx1278_write_reg(0x22, length);
-	sx1278_write_reg(0x01, 0x83);
+	sx1278_transfer();
+	sx1278_write_register(0x22, length);
 
-	printf("sending data ");
+	printf("sx1278: sending data ");
 	for (uint8_t ind = 0; ind < length; ind++) {
-		printf("%2x", data[ind]);
+		printf("%02x", data[ind]);
 	}
 	printf(" length %d\n", length);
 
-	uint16_t time_spent = 0;
+	uint16_t time_us = 0;
 	while (true) {
 		if (sx1278_read_register(0x12) & 0x08) {
-			printf("sending completed successfully\n");
+			printf("sx1278: sending completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
 			break;
 		}
-		sleep_ms(10);
-		time_spent += 10;
-		if (time_spent >= timeout_ms) {
-			printf("send timeout %d ms reached\n", timeout_ms);
+		sleep_us(50);
+		time_us += 50;
+		if (time_us / 1000 >= timeout_ms) {
+			printf("sx1278: send timeout %hu ms reached irq_flags 0x%02x\n", timeout_ms, sx1278_read_register(0x12));
 			break;
 		}
 	}
 
-	sx1278_write_reg(0x12, 0xff);
+	sx1278_write_register(0x12, 0xff);
+	printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
 }
