@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
+const uint16_t id = 0x3af7;
+
 int main(void) {
 	rp2040_stdio_init();
 	rp2040_led_init();
@@ -34,14 +36,28 @@ int main(void) {
 		sx1278_spreading_factor(7);
 		sx1278_checksum(true);
 
-		uint8_t data[8];
-		memcpy(&data[0], &temperature, sizeof(temperature));
-		memcpy(&data[4], &humidity, sizeof(humidity));
-		sx1278_send(data, sizeof(data), 1000);
-		sx1278_standby();
-		sx1278_sleep();
+		uint8_t tx_data[256];
+		uint8_t tx_data_len = 0;
+		memcpy(&tx_data[tx_data_len], &id, sizeof(id));
+		tx_data_len += sizeof(id);
+		memcpy(&tx_data[tx_data_len], &temperature, sizeof(temperature));
+		tx_data_len += sizeof(temperature);
+		memcpy(&tx_data[tx_data_len], &humidity, sizeof(humidity));
+		tx_data_len += sizeof(humidity);
+		sx1278_send(&tx_data, tx_data_len, 1000);
 
 		rp2040_led_blink(3, 50, true);
+
+		uint8_t rx_data[256];
+		uint8_t rx_data_len = 0;
+		sx1278_recv(&rx_data, &rx_data_len, 1000);
+
+		if (rx_data_len != 0) {
+			rp2040_led_blink(4, 50, true);
+		}
+
+		sx1278_standby();
+		sx1278_sleep();
 
 		pcf8563_alarm_schedule(1);
 		printf("entering dormant sleep\n");

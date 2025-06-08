@@ -95,8 +95,8 @@ void sx1278_transfer(void) {
 
 void sx1278_receive(void) {
 	uint16_t time_us = 0;
-	sx1278_write_register(0x01, 0x86);
-	while ((sx1278_read_register(0x01) & 0x07) != 0x06) {
+	sx1278_write_register(0x01, 0x85);
+	while ((sx1278_read_register(0x01) & 0x07) != 0x05) {
 		sleep_us(50);
 		time_us += 50;
 		if (time_us > 2000) {
@@ -223,7 +223,7 @@ void sx1278_checksum(bool crc) {
 	printf("sx1278: checksum %s modem_config_2 0x%02x\n", crc ? "true" : "false", sx1278_read_register(0x1e));
 }
 
-void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
+void sx1278_send(uint8_t (*data)[256], uint8_t length, uint16_t timeout_ms) {
 	sx1278_write_register(0x0d, 0x80);
 	sx1278_write_register(0x0e, 0x80);
 
@@ -232,7 +232,7 @@ void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
 	gpio_put(sx1278_nss_pin, 0);
 	uint8_t header = 0x80;
 	spi_write_blocking(sx1278_spi, &header, sizeof(header));
-	spi_write_blocking(sx1278_spi, data, length);
+	spi_write_blocking(sx1278_spi, *data, length);
 	gpio_put(sx1278_nss_pin, 1);
 
 	sx1278_transfer();
@@ -240,11 +240,11 @@ void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
 
 	printf("sx1278: sending data ");
 	for (uint8_t ind = 0; ind < length; ind++) {
-		printf("%02x", data[ind]);
+		printf("%02x", (*data)[ind]);
 	}
 	printf(" length %d\n", length);
 
-	uint16_t time_us = 0;
+	uint32_t time_us = 0;
 	while (true) {
 		if (sx1278_read_register(0x12) & 0x08) {
 			printf("sx1278: sending completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
@@ -257,6 +257,44 @@ void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms) {
 			break;
 		}
 	}
+
+	sx1278_write_register(0x12, 0xff);
+	printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
+}
+
+uint8_t sx1278_recv(uint8_t (*data)[256], uint8_t *length, uint16_t timeout_ms) {
+	sx1278_receive();
+
+	uint32_t time_us = 0;
+	while (true) {
+		if (sx1278_read_register(0x12) & 0x40) {
+			printf("sx1278: receiving completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
+			break;
+		}
+		sleep_us(50);
+		time_us += 50;
+		if (time_us / 1000 >= timeout_ms) {
+			printf("sx1278: recv timeout %hu ms reached irq_flags 0x%02x\n", timeout_ms, sx1278_read_register(0x12));
+			break;
+		}
+	}
+
+	uint8_t rx_addr = sx1278_read_register(0x10);
+	uint8_t packet_len = sx1278_read_register(0x13);
+
+	sx1278_write_register(0x0d, rx_addr);
+
+	for (uint8_t index = 0; index < packet_len; index++) {
+		(*data)[index] = sx1278_read_register(0x00);
+	}
+
+	*length = packet_len;
+
+	printf("sx1278: received data ");
+	for (uint8_t ind = 0; ind < *length; ind++) {
+		printf("%02x", (*data)[ind]);
+	}
+	printf(" length %d\n", *length);
 
 	sx1278_write_register(0x12, 0xff);
 	printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));

@@ -12,4 +12,5 @@ void sx1278_bandwidth(uint32_t bandwidth_hz);
 void sx1278_spreading_factor(uint8_t sf);
 void sx1278_checksum(bool crc);
 
-void sx1278_send(const uint8_t *data, uint8_t length, uint16_t timeout_ms);
+void sx1278_send(uint8_t (*data)[256], uint8_t length, uint16_t timeout_ms);
+void sx1278_recv(uint8_t (*data)[256], uint8_t *length, uint16_t timeout_ms);
