@@ -2,6 +2,8 @@
 #include <pico/stdlib.h>
 #include <stdio.h>
 
+const bool sx1278_debug = false;
+
 spi_inst_t *sx1278_spi = spi0;
 const uint sx1278_spi_speed = 1 * 1000 * 1000;
 
@@ -12,8 +14,10 @@ const uint sx1278_mosi_pin = 19;
 const uint sx1278_dio0_pin = 20;
 
 void sx1278_init(void) {
-	printf("sx1278: initialising gpio %d %d %d %d and %d\n", sx1278_miso_pin, sx1278_nss_pin, sx1278_scl_pin, sx1278_mosi_pin,
-				 sx1278_dio0_pin);
+	if (sx1278_debug) {
+		printf("sx1278: initialising gpio %d %d %d %d and %d\n", sx1278_miso_pin, sx1278_nss_pin, sx1278_scl_pin, sx1278_mosi_pin,
+					 sx1278_dio0_pin);
+	}
 
 	spi_init(sx1278_spi, sx1278_spi_speed);
 
@@ -62,7 +66,9 @@ void sx1278_sleep(void) {
 			break;
 		}
 	}
-	printf("sx1278: sleep op_mode 0x%02x\n", sx1278_read_register(0x01));
+	if (sx1278_debug) {
+		printf("sx1278: sleep op_mode 0x%02x\n", sx1278_read_register(0x01));
+	}
 }
 
 void sx1278_standby(void) {
@@ -76,7 +82,9 @@ void sx1278_standby(void) {
 			break;
 		}
 	}
-	printf("sx1278: standby op_mode 0x%02x\n", sx1278_read_register(0x01));
+	if (sx1278_debug) {
+		printf("sx1278: standby op_mode 0x%02x\n", sx1278_read_register(0x01));
+	}
 }
 
 void sx1278_transfer(void) {
@@ -90,7 +98,9 @@ void sx1278_transfer(void) {
 			break;
 		}
 	}
-	printf("sx1278: transfer op_mode 0x%02x\n", sx1278_read_register(0x01));
+	if (sx1278_debug) {
+		printf("sx1278: transfer op_mode 0x%02x\n", sx1278_read_register(0x01));
+	}
 }
 
 void sx1278_receive(void) {
@@ -104,7 +114,9 @@ void sx1278_receive(void) {
 			break;
 		}
 	}
-	printf("sx1278: receive op_mode 0x%02x\n", sx1278_read_register(0x01));
+	if (sx1278_debug) {
+		printf("sx1278: receive op_mode 0x%02x\n", sx1278_read_register(0x01));
+	}
 }
 
 void sx1278_frequency(uint32_t frequency) {
@@ -113,8 +125,10 @@ void sx1278_frequency(uint32_t frequency) {
 	sx1278_write_register(0x06, (frf >> 16) & 0xff);
 	sx1278_write_register(0x07, (frf >> 8) & 0xff);
 	sx1278_write_register(0x08, frf & 0xff);
-	printf("sx1278: frequency %u frf 0x%02x%02x%02x\n", frequency, sx1278_read_register(0x06), sx1278_read_register(0x07),
-				 sx1278_read_register(0x08));
+	if (sx1278_debug) {
+		printf("sx1278: frequency %u frf 0x%02x%02x%02x\n", frequency, sx1278_read_register(0x06), sx1278_read_register(0x07),
+					 sx1278_read_register(0x08));
+	}
 }
 
 void sx1278_tx_power(uint8_t power) {
@@ -127,7 +141,9 @@ void sx1278_tx_power(uint8_t power) {
 	uint8_t pa_config = 0x80 | (power - 2);
 
 	sx1278_write_register(0x09, pa_config);
-	printf("sx1278: tx power %hhu pa_config 0x%02x\n", power, sx1278_read_register(0x09));
+	if (sx1278_debug) {
+		printf("sx1278: tx power %hhu pa_config 0x%02x\n", power, sx1278_read_register(0x09));
+	}
 }
 
 void sx1278_coding_rate(uint8_t cr) {
@@ -144,7 +160,9 @@ void sx1278_coding_rate(uint8_t cr) {
 	modem_config_1 |= cr_bits;
 
 	sx1278_write_register(0x1d, modem_config_1);
-	printf("sx1278: coding rate 4/%d modem_config_1 0x%02x\n", cr, sx1278_read_register(0x1d));
+	if (sx1278_debug) {
+		printf("sx1278: coding rate 4/%d modem_config_1 0x%02x\n", cr, sx1278_read_register(0x1d));
+	}
 }
 
 void sx1278_bandwidth(uint32_t bandwidth) {
@@ -191,7 +209,9 @@ void sx1278_bandwidth(uint32_t bandwidth) {
 	modem_config_1 = (modem_config_1 & 0x0f) | (bw_bits << 4);
 
 	sx1278_write_register(0x1d, modem_config_1);
-	printf("sx1278: bandwidth %u modem_config_1 0x%02x\n", bandwidth, sx1278_read_register(0x1d));
+	if (sx1278_debug) {
+		printf("sx1278: bandwidth %u modem_config_1 0x%02x\n", bandwidth, sx1278_read_register(0x1d));
+	}
 }
 
 void sx1278_spreading_factor(uint8_t sf) {
@@ -207,7 +227,9 @@ void sx1278_spreading_factor(uint8_t sf) {
 	modem_config_2 |= (sf << 4);
 
 	sx1278_write_register(0x1e, modem_config_2);
-	printf("sx1278: spreading factor %d modem_config_2 0x%02x\n", sf, sx1278_read_register(0x1e));
+	if (sx1278_debug) {
+		printf("sx1278: spreading factor %d modem_config_2 0x%02x\n", sf, sx1278_read_register(0x1e));
+	}
 }
 
 void sx1278_checksum(bool crc) {
@@ -220,7 +242,9 @@ void sx1278_checksum(bool crc) {
 	}
 
 	sx1278_write_register(0x1e, modem_config_2);
-	printf("sx1278: checksum %s modem_config_2 0x%02x\n", crc ? "true" : "false", sx1278_read_register(0x1e));
+	if (sx1278_debug) {
+		printf("sx1278: checksum %s modem_config_2 0x%02x\n", crc ? "true" : "false", sx1278_read_register(0x1e));
+	}
 }
 
 void sx1278_send(uint8_t (*data)[256], uint8_t length, uint16_t timeout_ms) {
@@ -238,16 +262,20 @@ void sx1278_send(uint8_t (*data)[256], uint8_t length, uint16_t timeout_ms) {
 	sx1278_transfer();
 	sx1278_write_register(0x22, length);
 
-	printf("sx1278: sending data ");
-	for (uint8_t ind = 0; ind < length; ind++) {
-		printf("%02x", (*data)[ind]);
+	if (sx1278_debug) {
+		printf("sx1278: sending data ");
+		for (uint8_t ind = 0; ind < length; ind++) {
+			printf("%02x", (*data)[ind]);
+		}
+		printf(" length %d\n", length);
 	}
-	printf(" length %d\n", length);
 
 	uint32_t time_us = 0;
 	while (true) {
 		if (sx1278_read_register(0x12) & 0x08) {
-			printf("sx1278: sending completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
+			if (sx1278_debug) {
+				printf("sx1278: sending completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
+			}
 			break;
 		}
 		sleep_us(50);
@@ -259,7 +287,9 @@ void sx1278_send(uint8_t (*data)[256], uint8_t length, uint16_t timeout_ms) {
 	}
 
 	sx1278_write_register(0x12, 0xff);
-	printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
+	if (sx1278_debug) {
+		printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
+	}
 }
 
 uint8_t sx1278_recv(uint8_t (*data)[256], uint8_t *length, uint16_t timeout_ms) {
@@ -268,7 +298,9 @@ uint8_t sx1278_recv(uint8_t (*data)[256], uint8_t *length, uint16_t timeout_ms) 
 	uint32_t time_us = 0;
 	while (true) {
 		if (sx1278_read_register(0x12) & 0x40) {
-			printf("sx1278: receiving completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
+			if (sx1278_debug) {
+				printf("sx1278: receiving completed %.02f ms irq_flags 0x%02x\n", (float)time_us / 1000, sx1278_read_register(0x12));
+			}
 			break;
 		}
 		sleep_us(50);
@@ -290,12 +322,16 @@ uint8_t sx1278_recv(uint8_t (*data)[256], uint8_t *length, uint16_t timeout_ms) 
 
 	*length = packet_len;
 
-	printf("sx1278: received data ");
-	for (uint8_t ind = 0; ind < *length; ind++) {
-		printf("%02x", (*data)[ind]);
+	if (sx1278_debug) {
+		printf("sx1278: received data ");
+		for (uint8_t ind = 0; ind < *length; ind++) {
+			printf("%02x", (*data)[ind]);
+		}
+		printf(" length %d\n", *length);
 	}
-	printf(" length %d\n", *length);
 
 	sx1278_write_register(0x12, 0xff);
-	printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
+	if (sx1278_debug) {
+		printf("sx1278: acknowledge flags irq_flags 0x%02x\n", sx1278_read_register(0x12));
+	}
 }

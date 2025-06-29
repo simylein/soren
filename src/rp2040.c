@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <tusb.h>
 
+const bool rp2040_debug = false;
+
 const uint rp2040_led_pin = 25;
 
 const uint rp2040_photovoltaic_adc = 0;
@@ -12,7 +14,10 @@ const uint rp2040_battery_adc = 1;
 const uint rp2040_battery_pin = 27;
 
 void rp2040_stdio_init(void) {
-	printf("rp2040: initialising stdio\n");
+	if (rp2040_debug) {
+		printf("rp2040: initialising stdio\n");
+	}
+
 	stdio_init_all();
 	sleep_ms(2000);
 }
@@ -23,7 +28,9 @@ void rp2040_stdio_deinit() {
 }
 
 void rp2040_led_init(void) {
-	printf("rp2040: initialising gpio %d\n", rp2040_led_pin);
+	if (rp2040_debug) {
+		printf("rp2040: initialising gpio %d\n", rp2040_led_pin);
+	}
 
 	gpio_init(rp2040_led_pin);
 	gpio_set_dir(rp2040_led_pin, GPIO_OUT);

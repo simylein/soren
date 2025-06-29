@@ -3,6 +3,8 @@
 #include <pico/stdlib.h>
 #include <stdio.h>
 
+const bool pcf8563_debug = false;
+
 i2c_inst_t *pcf8563_i2c = i2c0;
 
 const uint pcf8563_sda_pin = 0;
@@ -16,8 +18,10 @@ uint8_t bcd_to_dec(uint8_t val) { return ((val >> 4) * 10) + (val & 0x0f); }
 uint8_t dec_to_bcd(uint8_t val) { return ((val / 10) << 4) | (val % 10); }
 
 void pcf8563_init(void) {
-	printf("pcf8563: initialising gpio %d %d and %d\n", pcf8563_sda_pin, pcf8563_scl_pin, pcf8563_int_pin);
-	printf("pcf8563: initialising address 0x%x\n", pcf8563_addr);
+	if (pcf8563_debug) {
+		printf("pcf8563: initialising gpio %d %d and %d\n", pcf8563_sda_pin, pcf8563_scl_pin, pcf8563_int_pin);
+		printf("pcf8563: initialising address 0x%x\n", pcf8563_addr);
+	}
 
 	i2c_init(pcf8563_i2c, 100 * 1000);
 
