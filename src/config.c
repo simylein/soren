@@ -1,0 +1,127 @@
+#include "config.h"
+#include "endian.h"
+#include "format.h"
+#include "logger.h"
+#include <hardware/flash.h>
+#include <hardware/i2c.h>
+#include <hardware/spi.h>
+#include <hardware/sync.h>
+#include <pico/stdlib.h>
+#include <string.h>
+
+config_t config;
+
+const char *name = "soren";
+
+const uint8_t log_level = 6;
+const bool log_receives = true;
+const bool log_transmits = true;
+
+const uint32_t timeout = 256;
+
+i2c_inst_t *const ds3231_i2c_inst = i2c0;
+const uint ds3231_i2c_speed = 1 * 100 * 1000;
+const uint ds3231_pin_sda = 0;
+const uint ds3231_pin_scl = 1;
+const uint ds3231_pin_int = 2;
+const uint8_t ds3231_addr = 0x68;
+
+i2c_inst_t *const si7021_i2c_inst = i2c1;
+const uint si7021_i2c_speed = 1 * 100 * 1000;
+const uint si7021_pin_sda = 6;
+const uint si7021_pin_scl = 7;
+const uint8_t si7021_addr = 0x40;
+
+spi_inst_t *const sx1278_spi_inst = spi0;
+const uint sx1278_spi_speed = 1 * 1000 * 1000;
+const uint sx1278_pin_miso = 16;
+const uint sx1278_pin_nss = 17;
+const uint sx1278_pin_sck = 18;
+const uint sx1278_pin_mosi = 19;
+
+void config_write(config_t *config) {
+	trace("config write id 0x%02x%02x\n", config->id[0], config->id[1]);
+	trace("config write firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
+	trace("config write hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
+	trace("config write interval %hu\n", config->interval);
+	trace("config write frequency %u\n", config->frequency);
+	trace("config write bandwidth %u\n", config->bandwidth);
+	trace("config write coding rate %hhu\n", config->coding_rate);
+	trace("config write spreading factor %hhu\n", config->spreading_factor);
+	trace("config write tx power %hhu\n", config->tx_power);
+	trace("config write sync word 0x%02x\n", config->sync_word);
+	trace("config write checksum %s\n", human_bool(config->checksum));
+
+	size_t offset = 0;
+	uint8_t buffer[256];
+	memcpy(&buffer[offset], config->id, sizeof(config->id));
+	offset += sizeof(config->id);
+	memcpy(&buffer[offset], config->firmware, sizeof(config->firmware));
+	offset += sizeof(config->firmware);
+	memcpy(&buffer[offset], config->hardware, sizeof(config->hardware));
+	offset += sizeof(config->hardware);
+	memcpy(&buffer[offset], (uint16_t[]){hton16(config->interval)}, sizeof(config->interval));
+	offset += sizeof(config->interval);
+	memcpy(&buffer[offset], (uint32_t[]){hton32(config->frequency)}, sizeof(config->frequency));
+	offset += sizeof(config->frequency);
+	memcpy(&buffer[offset], (uint32_t[]){hton32(config->bandwidth)}, sizeof(config->bandwidth));
+	offset += sizeof(config->bandwidth);
+	buffer[offset] = config->coding_rate;
+	offset += sizeof(config->coding_rate);
+	buffer[offset] = config->spreading_factor;
+	offset += sizeof(config->spreading_factor);
+	buffer[offset] = config->tx_power;
+	offset += sizeof(config->tx_power);
+	buffer[offset] = config->sync_word;
+	offset += sizeof(config->sync_word);
+	buffer[offset] = config->checksum;
+	offset += sizeof(config->checksum);
+
+	uint32_t irq = save_and_disable_interrupts();
+	flash_range_erase(PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE, FLASH_SECTOR_SIZE);
+	flash_range_program(PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE, buffer, FLASH_PAGE_SIZE);
+	restore_interrupts(irq);
+}
+
+void config_read(config_t *config) {
+	const uint8_t *base = (const uint8_t *)(XIP_BASE + PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE);
+
+	size_t offset = 0;
+	memcpy(config->id, &base[offset], sizeof(config->id));
+	offset += sizeof(config->id);
+	memcpy(config->firmware, &base[offset], sizeof(config->firmware));
+	offset += sizeof(config->firmware);
+	memcpy(config->hardware, &base[offset], sizeof(config->hardware));
+	offset += sizeof(config->hardware);
+	memcpy(&config->interval, &base[offset], sizeof(config->interval));
+	config->interval = (uint16_t)(ntoh16(config->interval));
+	offset += sizeof(config->interval);
+	memcpy(&config->frequency, &base[offset], sizeof(config->frequency));
+	config->frequency = (uint32_t)(ntoh32(config->frequency));
+	offset += sizeof(config->frequency);
+	memcpy(&config->bandwidth, &base[offset], sizeof(config->bandwidth));
+	config->bandwidth = (uint32_t)(ntoh32(config->bandwidth));
+	offset += sizeof(config->bandwidth);
+	config->coding_rate = base[offset];
+	offset += sizeof(config->coding_rate);
+	config->spreading_factor = base[offset];
+	offset += sizeof(config->spreading_factor);
+	config->tx_power = base[offset];
+	offset += sizeof(config->tx_power);
+	config->sync_word = base[offset];
+	offset += sizeof(config->sync_word);
+	config->checksum = base[offset];
+	offset += sizeof(config->checksum);
+
+	trace("config read id 0x%02x%02x\n", config->id[0], config->id[1]);
+	trace("config read firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
+	trace("config read hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
+	trace("config read interval %hu\n", config->interval);
+	trace("config read frequency %u\n", config->frequency);
+	trace("config read bandwidth %u\n", config->bandwidth);
+	trace("config read coding rate %hhu\n", config->coding_rate);
+	trace("config read spreading factor %hhu\n", config->spreading_factor);
+	trace("config read tx power %hhu\n", config->tx_power);
+	trace("config read sync word 0x%02x\n", config->sync_word);
+	trace("config read checksum %s\n", human_bool(config->checksum));
+}
