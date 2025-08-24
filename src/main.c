@@ -14,6 +14,7 @@ int main(void) {
 
 	si7021_init();
 	sx1278_init();
+	rp2040_adc_init();
 
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
@@ -73,6 +74,14 @@ int main(void) {
 
 		info("temperature %.2f humidity %.2f\n", si7021_temperature_human(temperature), si7021_humidity_human(humidity));
 
+		uint16_t photovoltaic;
+		rp2040_photovoltaic(&photovoltaic);
+
+		uint16_t battery;
+		rp2040_battery(&battery);
+
+		info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
+
 		if (sx1278_standby(timeout) == -1) {
 			error("sx1278 failed to enter standby\n");
 		}
@@ -82,12 +91,18 @@ int main(void) {
 
 		memcpy(&tx_data[tx_data_len], config.id, sizeof(config.id));
 		tx_data_len += sizeof(config.id);
-		tx_data[tx_data_len] = 0x01;
+		tx_data[tx_data_len] = 0x03;
 		tx_data_len += 1;
 		memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
 		tx_data_len += sizeof(temperature);
 		memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
 		tx_data_len += sizeof(humidity);
+		uint8_t packed[3];
+		packed[0] = (uint8_t)(photovoltaic >> 4);
+		packed[1] = (uint8_t)((photovoltaic & 0x0f) << 4) | (uint8_t)(battery >> 8);
+		packed[2] = (uint8_t)(battery & 0xff);
+		memcpy(&tx_data[tx_data_len], packed, sizeof(packed));
+		tx_data_len += sizeof(packed);
 
 		if (sx1278_transmit(&tx_data, tx_data_len, 2048)) {
 			error("sx1278 failed to transmit packet\n");

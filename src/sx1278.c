@@ -24,7 +24,7 @@ const uint8_t reg_modem_config_2 = 0x1e;
 const uint8_t reg_sync_word = 0x39;
 
 void sx1278_init(void) {
-	trace("sx1278 initialising gpio %d %d %d and %d\n", sx1278_pin_miso, sx1278_pin_nss, sx1278_pin_sck, sx1278_pin_mosi);
+	trace("sx1278 init gpio %d %d %d and %d\n", sx1278_pin_miso, sx1278_pin_nss, sx1278_pin_sck, sx1278_pin_mosi);
 
 	spi_init(sx1278_spi_inst, sx1278_spi_speed);
 	spi_set_format(sx1278_spi_inst, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);

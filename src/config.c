@@ -19,6 +19,9 @@ const bool log_transmits = true;
 
 const uint32_t timeout = 256;
 
+const uint rp2040_pin_photovoltaic = 26;
+const uint rp2040_pin_battery = 27;
+
 i2c_inst_t *const ds3231_i2c_inst = i2c0;
 const uint ds3231_i2c_speed = 1 * 100 * 1000;
 const uint ds3231_pin_sda = 0;

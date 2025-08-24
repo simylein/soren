@@ -1,9 +1,39 @@
+#include "config.h"
+#include "hardware/adc.h"
 #include "logger.h"
 #include <pico/stdlib.h>
 
 void rp2040_stdio_init(void) {
-	trace("initialising stdio\n");
+	trace("rp2040 init stdio\n");
+
 	stdio_init_all();
 
-	sleep_ms(2000);
+	sleep_ms(2048);
 }
+
+void rp2040_adc_init(void) {
+	trace("rp2040 init gpio %d and %d\n", rp2040_pin_photovoltaic, rp2040_pin_battery);
+
+	adc_init();
+
+	adc_gpio_init(rp2040_pin_photovoltaic);
+	adc_gpio_init(rp2040_pin_battery);
+}
+
+void rp2040_photovoltaic(uint16_t *photovoltaic) {
+	adc_select_input(rp2040_pin_photovoltaic);
+
+	adc_read();
+	*photovoltaic = adc_read();
+}
+
+float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3) / 4095.0; }
+
+void rp2040_battery(uint16_t *battery) {
+	adc_select_input(rp2040_pin_battery);
+
+	adc_read();
+	*battery = adc_read();
+}
+
+float rp2040_battery_human(uint16_t battery) { return (battery * 3.3) / 4095.0; }
