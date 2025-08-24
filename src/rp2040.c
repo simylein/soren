@@ -21,7 +21,7 @@ void rp2040_adc_init(void) {
 }
 
 void rp2040_photovoltaic(uint16_t *photovoltaic) {
-	adc_select_input(rp2040_pin_photovoltaic);
+	adc_select_input(rp2040_adc_photovoltaic);
 
 	adc_read();
 	*photovoltaic = adc_read();
@@ -30,7 +30,7 @@ void rp2040_photovoltaic(uint16_t *photovoltaic) {
 float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3) / 4095.0; }
 
 void rp2040_battery(uint16_t *battery) {
-	adc_select_input(rp2040_pin_battery);
+	adc_select_input(rp2040_adc_battery);
 
 	adc_read();
 	*battery = adc_read();
