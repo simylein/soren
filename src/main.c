@@ -1,17 +1,26 @@
 #include "config.h"
+#include "ds3231.h"
 #include "endian.h"
 #include "logger.h"
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
+#include <pico/sleep.h>
 #include <pico/stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
+const bool prod = true;
+
 int main(void) {
-	rp2040_stdio_init();
+	if (!prod) {
+		rp2040_stdio_init();
+	}
 
 	info("starting soren sensor firmware\n");
 
+	ds3231_init();
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
@@ -149,6 +158,24 @@ int main(void) {
 		}
 
 		debug("sleeping for %d seconds\n", config.interval);
-		sleep_ms(config.interval * 1000);
+
+		if (!prod) {
+			sleep_ms(config.interval * 1000);
+		} else {
+			if (ds3231_alarm(config.interval) == -1) {
+				error("ds3231 failed to write alarm\n");
+			}
+
+			sleep_run_from_xosc();
+			sleep_goto_dormant_until_pin(ds3231_pin_int, true, false);
+			sleep_power_up();
+
+			ds3231_init();
+			si7021_init();
+			sx1278_init();
+			rp2040_adc_init();
+		}
+
+		debug("woke up from sleep\n");
 	}
 }
