@@ -28,8 +28,10 @@ extern const uint32_t timeout;
 
 extern const uint rp2040_pin_photovoltaic;
 extern const uint rp2040_adc_photovoltaic;
+extern const uint rp2040_en_photovoltaic;
 extern const uint rp2040_pin_battery;
 extern const uint rp2040_adc_battery;
+extern const uint rp2040_en_battery;
 
 extern i2c_inst_t *const ds3231_i2c_inst;
 extern const uint ds3231_i2c_speed;

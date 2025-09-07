@@ -21,8 +21,10 @@ const uint32_t timeout = 256;
 
 const uint rp2040_pin_photovoltaic = 26;
 const uint rp2040_adc_photovoltaic = 0;
+const uint rp2040_en_photovoltaic = 10;
 const uint rp2040_pin_battery = 27;
 const uint rp2040_adc_battery = 1;
+const uint rp2040_en_battery = 11;
 
 i2c_inst_t *const ds3231_i2c_inst = i2c0;
 const uint ds3231_i2c_speed = 1 * 100 * 1000;
