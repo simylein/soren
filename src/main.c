@@ -68,28 +68,36 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
+	uint16_t next_reading = config.reading_interval;
+	uint16_t next_metric = config.metric_interval;
 	while (true) {
+		bool reading = next_reading == 0 && config.reading_enable == true;
+		bool metric = next_metric == 0 && config.metric_enable == true;
+
 		uint16_t temperature;
-		if (si7021_temperature(&temperature, timeout) == -1) {
-			error("si7021 failed to read temperature\n");
-			goto sleep;
-		};
-
 		uint16_t humidity;
-		if (si7021_humidity(&humidity, timeout) == -1) {
-			error("si7021 failed to read humidity\n");
-			goto sleep;
-		};
+		if (reading == true) {
+			if (si7021_temperature(&temperature, timeout) == -1) {
+				error("si7021 failed to read temperature\n");
+				goto sleep;
+			};
 
-		info("temperature %.2f humidity %.2f\n", si7021_temperature_human(temperature), si7021_humidity_human(humidity));
+			if (si7021_humidity(&humidity, timeout) == -1) {
+				error("si7021 failed to read humidity\n");
+				goto sleep;
+			};
+
+			info("temperature %.2f humidity %.2f\n", si7021_temperature_human(temperature), si7021_humidity_human(humidity));
+		}
 
 		uint16_t photovoltaic;
-		rp2040_photovoltaic(&photovoltaic);
-
 		uint16_t battery;
-		rp2040_battery(&battery);
+		if (metric == true) {
+			rp2040_photovoltaic(&photovoltaic);
+			rp2040_battery(&battery);
 
-		info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
+			info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
+		}
 
 		if (sx1278_standby(timeout) == -1) {
 			error("sx1278 failed to enter standby\n");
@@ -100,18 +108,30 @@ int main(void) {
 
 		memcpy(&tx_data[tx_data_len], config.id, sizeof(config.id));
 		tx_data_len += sizeof(config.id);
-		tx_data[tx_data_len] = 0x03;
+		if (reading == true && metric == true) {
+			tx_data[tx_data_len] = 0x03;
+		} else if (reading == true) {
+			tx_data[tx_data_len] = 0x01;
+		} else if (metric == true) {
+			tx_data[tx_data_len] = 0x02;
+		} else {
+			tx_data[tx_data_len] = 0x00;
+		}
 		tx_data_len += 1;
-		memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
-		tx_data_len += sizeof(temperature);
-		memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
-		tx_data_len += sizeof(humidity);
-		uint8_t packed[3];
-		packed[0] = (uint8_t)(photovoltaic >> 4);
-		packed[1] = (uint8_t)((photovoltaic & 0x0f) << 4) | (uint8_t)(battery >> 8);
-		packed[2] = (uint8_t)(battery & 0xff);
-		memcpy(&tx_data[tx_data_len], packed, sizeof(packed));
-		tx_data_len += sizeof(packed);
+		if (reading == true) {
+			memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
+			tx_data_len += sizeof(temperature);
+			memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
+			tx_data_len += sizeof(humidity);
+		}
+		if (metric == true) {
+			uint8_t packed[3];
+			packed[0] = (uint8_t)(photovoltaic >> 4);
+			packed[1] = (uint8_t)((photovoltaic & 0x0f) << 4) | (uint8_t)(battery >> 8);
+			packed[2] = (uint8_t)(battery & 0xff);
+			memcpy(&tx_data[tx_data_len], packed, sizeof(packed));
+			tx_data_len += sizeof(packed);
+		}
 
 		if (sx1278_transmit(&tx_data, tx_data_len, 2048)) {
 			error("sx1278 failed to transmit packet\n");
@@ -157,12 +177,26 @@ int main(void) {
 			error("sx1278 failed to enter sleep\n");
 		}
 
-		debug("sleeping for %d seconds\n", config.interval);
+		uint16_t interval;
+		if (next_reading == 0) {
+			next_reading = config.reading_interval;
+		}
+		if (next_metric == 0) {
+			next_metric = config.metric_interval;
+		}
+		if (next_reading < next_metric) {
+			interval = next_reading;
+		} else {
+			interval = next_metric;
+		}
+		trace("next reading in %hu seconds\n", next_reading);
+		trace("next metric in %hu seconds\n", next_metric);
+		debug("sleeping for %hu seconds\n", interval);
 
 		if (!prod) {
-			sleep_ms(config.interval * 1000);
+			sleep_ms(interval * 1000);
 		} else {
-			if (ds3231_alarm(config.interval) == -1) {
+			if (ds3231_alarm(interval) == -1) {
 				error("ds3231 failed to write alarm\n");
 			}
 
@@ -177,5 +211,7 @@ int main(void) {
 		}
 
 		debug("woke up from sleep\n");
+		next_reading -= interval;
+		next_metric -= interval;
 	}
 }
