@@ -93,8 +93,8 @@ int main(void) {
 		uint16_t photovoltaic;
 		uint16_t battery;
 		if (metric == true) {
-			rp2040_photovoltaic(&photovoltaic);
-			rp2040_battery(&battery);
+			rp2040_photovoltaic(&photovoltaic, 5);
+			rp2040_battery(&battery, 5);
 
 			info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
 		}

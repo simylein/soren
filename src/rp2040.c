@@ -3,18 +3,6 @@
 #include "logger.h"
 #include <pico/stdlib.h>
 
-void sort(uint16_t *items, uint8_t items_len) {
-	for (uint8_t index = 0; index < items_len - 1; index++) {
-		for (uint8_t ind = 0; ind < items_len - index - 1; ind++) {
-			if (items[ind] > items[ind + 1]) {
-				uint16_t store = items[ind];
-				items[ind] = items[ind + 1];
-				items[ind + 1] = store;
-			}
-		}
-	}
-}
-
 void rp2040_stdio_init(void) {
 	trace("rp2040 init stdio\n");
 
@@ -35,38 +23,40 @@ void rp2040_adc_init(void) {
 	gpio_set_dir(rp2040_en_battery, GPIO_OUT);
 }
 
-void rp2040_photovoltaic(uint16_t *photovoltaic) {
+void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {
 	gpio_put(rp2040_en_photovoltaic, 1);
+
+	sleep_us(5000);
 
 	adc_select_input(rp2040_adc_photovoltaic);
 	adc_read();
 
-	uint16_t samples[5];
-	for (uint8_t index = 0; index < sizeof(samples) / sizeof(uint16_t); index++) {
-		samples[index] = adc_read();
+	uint32_t accumulator = 0;
+	for (uint8_t index = 0; index < samples; index++) {
+		accumulator += adc_read();
 	}
-	sort(samples, sizeof(samples) / sizeof(uint16_t));
-	*photovoltaic = samples[sizeof(samples) / sizeof(uint16_t) / 2];
+	*photovoltaic = accumulator / samples;
 
 	gpio_put(rp2040_en_photovoltaic, 0);
 }
 
-float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3f) / 4095.0f; }
+float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3f) / 4095.0f * 2; }
 
-void rp2040_battery(uint16_t *battery) {
+void rp2040_battery(uint16_t *battery, uint8_t samples) {
 	gpio_put(rp2040_en_battery, 1);
+
+	sleep_us(5000);
 
 	adc_select_input(rp2040_adc_battery);
 	adc_read();
 
-	uint16_t samples[5];
-	for (uint8_t index = 0; index < sizeof(samples) / sizeof(uint16_t); index++) {
-		samples[index] = adc_read();
+	uint32_t accumulator = 0;
+	for (uint8_t index = 0; index < samples; index++) {
+		accumulator += adc_read();
 	}
-	sort(samples, sizeof(samples) / sizeof(uint16_t));
-	*battery = samples[sizeof(samples) / sizeof(uint16_t) / 2];
+	*battery = accumulator / samples;
 
 	gpio_put(rp2040_en_battery, 0);
 }
 
-float rp2040_battery_human(uint16_t battery) { return (battery * 3.3f) / 4095.0f; }
+float rp2040_battery_human(uint16_t battery) { return (battery * 3.3f) / 4095.0f * 2; }
