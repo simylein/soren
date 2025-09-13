@@ -68,8 +68,8 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
-	uint16_t next_reading = config.reading_interval;
-	uint16_t next_metric = config.metric_interval;
+	uint16_t next_reading = 0;
+	uint16_t next_metric = 0;
 	while (true) {
 		bool reading = next_reading == 0 && config.reading_enable == true;
 		bool metric = next_metric == 0 && config.metric_enable == true;
