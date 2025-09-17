@@ -1,3 +1,4 @@
+#include "app.h"
 #include "config.h"
 #include "ds3231.h"
 #include "endian.h"
@@ -71,6 +72,8 @@ int main(void) {
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
 	while (true) {
+		time_t captured_at = time(NULL);
+
 		bool reading = next_reading == 0 && config.reading_enable == true;
 		bool metric = next_metric == 0 && config.metric_enable == true;
 
@@ -103,70 +106,36 @@ int main(void) {
 			error("sx1278 failed to enter standby\n");
 		}
 
-		uint8_t tx_data[256];
-		uint8_t tx_data_len = 0;
+		uplink_t uplink = {.data_len = 0, captured_at = captured_at};
 
-		memcpy(&tx_data[tx_data_len], config.id, sizeof(config.id));
-		tx_data_len += sizeof(config.id);
 		if (reading == true && metric == true) {
-			tx_data[tx_data_len] = 0x03;
+			uplink.kind = 0x03;
 		} else if (reading == true) {
-			tx_data[tx_data_len] = 0x01;
+			uplink.kind = 0x01;
 		} else if (metric == true) {
-			tx_data[tx_data_len] = 0x02;
+			uplink.kind = 0x02;
 		} else {
-			tx_data[tx_data_len] = 0x00;
+			uplink.kind = 0x00;
 		}
-		tx_data_len += 1;
+
 		if (reading == true) {
-			memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
-			tx_data_len += sizeof(temperature);
-			memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
-			tx_data_len += sizeof(humidity);
+			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
+			uplink.data_len += sizeof(temperature);
+			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
+			uplink.data_len += sizeof(humidity);
 		}
 		if (metric == true) {
 			uint8_t packed[3];
 			packed[0] = (uint8_t)(photovoltaic >> 4);
 			packed[1] = (uint8_t)((photovoltaic & 0x0f) << 4) | (uint8_t)(battery >> 8);
 			packed[2] = (uint8_t)(battery & 0xff);
-			memcpy(&tx_data[tx_data_len], packed, sizeof(packed));
-			tx_data_len += sizeof(packed);
+			memcpy(&uplink.data[uplink.data_len], packed, sizeof(packed));
+			uplink.data_len += sizeof(packed);
 		}
 
-		if (sx1278_transmit(&tx_data, tx_data_len, 2048)) {
-			error("sx1278 failed to transmit packet\n");
+		if (transceive(&config, &uplink) == -1) {
 			goto sleep;
 		}
-
-		tx("id %02x%02x kind %02x bytes %hhu power %hhu sf %hhu\n", tx_data[0], tx_data[1], tx_data[2], tx_data_len,
-			 config.tx_power, config.spreading_factor);
-
-		uint8_t rx_data[256];
-		uint8_t rx_data_len = 0;
-		if (sx1278_receive(&rx_data, &rx_data_len, 2048) == -1) {
-			error("sx1278 failed to receive packet\n");
-			goto sleep;
-		}
-
-		if (rx_data_len < 3) {
-			debug("sx1278 received packet without headers\n");
-			goto sleep;
-		}
-
-		int16_t rssi;
-		if (sx1278_rssi(&rssi) == -1) {
-			error("sx1278 failed to read packet rssi\n");
-			goto sleep;
-		}
-
-		int8_t snr;
-		if (sx1278_snr(&snr) == -1) {
-			error("sx1278 failed to read packet snr\n");
-			goto sleep;
-		}
-
-		rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu\n", rx_data[0], rx_data[1], rx_data[2], rx_data_len, rssi,
-			 snr / 4.0f, config.spreading_factor);
 
 		if (sx1278_standby(timeout) == -1) {
 			error("sx1278 failed to enter standby\n");
