@@ -1,4 +1,5 @@
 #include "app.h"
+#include "buffer.h"
 #include "config.h"
 #include "ds3231.h"
 #include "endian.h"
@@ -134,7 +135,39 @@ int main(void) {
 		}
 
 		if (transceive(&config, &uplink) == -1) {
+			if (uplink.kind != 0x00) {
+				buffer_push(&uplink);
+				info("buffered uplink at size %hu\n", buffer.size);
+			}
 			goto sleep;
+		}
+
+		if (buffer.size > 0) {
+			sleep_ms(50);
+			info("offloading buffer at size %hu\n", buffer.size);
+
+			uplink_t uplink;
+			buffer_peek(&uplink);
+
+			time_t now = time(NULL);
+			time_t delta = now - uplink.captured_at;
+
+			uplink.kind |= 0x80;
+
+			uplink.data[uplink.data_len] = (delta >> 16) & 0xff;
+			uplink.data_len += 1;
+			uplink.data[uplink.data_len] = (delta >> 8) & 0xff;
+			uplink.data_len += 1;
+			uplink.data[uplink.data_len] = delta & 0xff;
+			uplink.data_len += 1;
+			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size)}, sizeof(buffer.size));
+			uplink.data_len += sizeof(buffer.size);
+
+			if (transceive(&config, &uplink) == -1) {
+				goto sleep;
+			}
+
+			buffer_pop();
 		}
 
 		if (sx1278_standby(timeout) == -1) {
