@@ -13,7 +13,7 @@ config_t config;
 
 const char *name = "soren";
 
-const uint8_t log_level = 6;
+const uint8_t log_level = 4;
 const bool log_receives = true;
 const bool log_transmits = true;
 
