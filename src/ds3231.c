@@ -2,6 +2,7 @@
 #include "config.h"
 #include "logger.h"
 #include <pico/stdlib.h>
+#include <pico/types.h>
 
 const uint8_t reg_alarm = 0x07;
 const uint8_t reg_ctrl = 0x0e;
@@ -54,18 +55,23 @@ int ds3231_write_register(uint8_t reg, uint8_t *data, uint8_t data_len) {
 	return 0;
 }
 
-int ds3231_rtc(rtc_t *rtc) {
+int ds3231_datetime(datetime_t *datetime) {
 	uint8_t reg = 0x00;
-	uint8_t data[3];
+	uint8_t data[7];
 
 	if (ds3231_read_register(reg, data, sizeof(data)) == -1) {
 		return -1;
 	}
-	trace("ds3231 read data 0x%02x%02x%02x\n", data[0], data[1], data[2]);
+	trace("ds3231 read data 0x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
 
-	rtc->hours = bcd2bin((data[2] & 0x3f));
-	rtc->minutes = bcd2bin(data[1] & 0x7f);
-	rtc->seconds = bcd2bin(data[0] & 0x7f);
+	datetime->hour = bcd2bin((data[2] & 0x3f));
+	datetime->min = bcd2bin(data[1] & 0x7f);
+	datetime->sec = bcd2bin(data[0] & 0x7f);
+
+	datetime->dotw = bcd2bin(data[3] & 0x07);
+	datetime->day = bcd2bin(data[4] & 0x3f);
+	datetime->month = bcd2bin(data[5] & 0x1f);
+	datetime->year = 2000 + (((data[5] >> 7) & 0x01) * 100) + bcd2bin(data[6]);
 
 	return 0;
 }
@@ -98,12 +104,12 @@ int ds3231_alarm(uint32_t seconds) {
 		return -1;
 	}
 
-	rtc_t now;
-	if (ds3231_rtc(&now) == -1) {
+	datetime_t now;
+	if (ds3231_datetime(&now) == -1) {
 		return -1;
 	}
 
-	uint32_t now_seconds = now.hours * 3600u + now.minutes * 60u + now.seconds;
+	uint32_t now_seconds = now.hour * 3600u + now.min * 60u + now.sec;
 	uint32_t today_seconds = (now_seconds + seconds) % 86400u;
 
 	uint8_t alarm[4];
@@ -114,6 +120,20 @@ int ds3231_alarm(uint32_t seconds) {
 
 	trace("ds3231 write data 0x%02x%02x%02x%02x\n", alarm[0], alarm[1], alarm[2], alarm[3]);
 	if (ds3231_write_register(reg_alarm, alarm, sizeof(alarm)) == -1) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int ds3231_alarm_clear(void) {
+	uint8_t status;
+	if (ds3231_read_register(reg_status, &status, 1) == -1) {
+		return -1;
+	}
+
+	status &= ~(1u << 0);
+	if (ds3231_write_register(reg_status, &status, 1) == -1) {
 		return -1;
 	}
 

@@ -15,6 +15,6 @@ add_executable(soren src/main.c src/app src/buffer src/config.c src/endian.c src
 pico_enable_stdio_usb(soren 1)
 pico_enable_stdio_uart(soren 0)
 
-target_link_libraries(soren pico_stdlib hardware_adc hardware_i2c hardware_spi hardware_sleep)
+target_link_libraries(soren pico_stdlib hardware_adc hardware_i2c hardware_spi hardware_rtc hardware_sleep)
 
 pico_add_extra_outputs(soren)

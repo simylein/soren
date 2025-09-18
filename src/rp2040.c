@@ -1,6 +1,7 @@
 #include "config.h"
-#include "hardware/adc.h"
 #include "logger.h"
+#include <hardware/adc.h>
+#include <hardware/rtc.h>
 #include <pico/stdlib.h>
 
 void rp2040_stdio_init(void) {
@@ -21,6 +22,12 @@ void rp2040_adc_init(void) {
 
 	gpio_set_dir(rp2040_en_photovoltaic, GPIO_OUT);
 	gpio_set_dir(rp2040_en_battery, GPIO_OUT);
+}
+
+void rp2040_rtc_init(void) {
+	trace("rp2040 init rtc\n");
+
+	rtc_init();
 }
 
 void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {

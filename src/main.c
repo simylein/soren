@@ -7,8 +7,10 @@
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
+#include <hardware/rtc.h>
 #include <pico/sleep.h>
 #include <pico/stdlib.h>
+#include <pico/types.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -26,6 +28,7 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
+	rp2040_rtc_init();
 
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
@@ -160,7 +163,7 @@ int main(void) {
 			uplink.data_len += 1;
 			uplink.data[uplink.data_len] = delta & 0xff;
 			uplink.data_len += 1;
-			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size)}, sizeof(buffer.size));
+			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size - 1)}, sizeof(buffer.size));
 			uplink.data_len += sizeof(buffer.size);
 
 			if (transceive(&config, &uplink) == -1) {
@@ -210,6 +213,18 @@ int main(void) {
 			si7021_init();
 			sx1278_init();
 			rp2040_adc_init();
+			rp2040_rtc_init();
+
+			if (ds3231_alarm_clear() == -1) {
+				error("ds3231 failed to clear alarm\n");
+			}
+
+			datetime_t datetime;
+			if (ds3231_datetime(&datetime) == -1) {
+				error("ds3231 failed to read datetime\n");
+			}
+
+			rtc_set_datetime(&datetime);
 		}
 
 		debug("woke up from sleep\n");
