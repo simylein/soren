@@ -163,7 +163,7 @@ int main(void) {
 			uplink.data_len += 1;
 			uplink.data[uplink.data_len] = delta & 0xff;
 			uplink.data_len += 1;
-			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size - 1)}, sizeof(buffer.size));
+			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size)}, sizeof(buffer.size));
 			uplink.data_len += sizeof(buffer.size);
 
 			if (transceive(&config, &uplink) == -1) {
