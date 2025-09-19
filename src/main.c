@@ -171,6 +171,16 @@ int main(void) {
 			}
 
 			buffer_pop();
+
+			if (buffer.size == 0) {
+				sleep_ms(50);
+				uplink.kind = 0x80;
+				uplink.data_len = 5;
+				memset(uplink.data, 0x00, uplink.data_len);
+				if (transceive(&config, &uplink) == -1) {
+					goto sleep;
+				}
+			}
 		}
 
 		if (sx1278_standby(timeout) == -1) {
