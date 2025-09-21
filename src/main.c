@@ -76,7 +76,10 @@ int main(void) {
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
 	while (true) {
-		time_t captured_at = time(NULL);
+		datetime_t captured_at;
+		if (rtc_get_datetime(&captured_at) == false) {
+			error("rtc failed to read datetime\n");
+		}
 
 		bool reading = next_reading == 0 && config.reading_enable == true;
 		bool metric = next_metric == 0 && config.metric_enable == true;
@@ -152,16 +155,30 @@ int main(void) {
 			uplink_t uplink;
 			buffer_peek(&uplink);
 
-			time_t now = time(NULL);
-			time_t delta = now - uplink.captured_at;
+			datetime_t now;
+			if (rtc_get_datetime(&now) == false) {
+				error("rtc failed to read datetime\n");
+			}
+
+			time_t epoch;
+			if (datetime_to_time(&now, &epoch) == false) {
+				error("failed to convert datetime\n");
+			}
+
+			time_t captured_at;
+			if (datetime_to_time(&uplink.captured_at, &captured_at) == false) {
+				error("failed to convert datetime\n");
+			}
+
+			time_t delay = epoch - captured_at;
 
 			uplink.kind |= 0x80;
 
-			uplink.data[uplink.data_len] = (delta >> 16) & 0xff;
+			uplink.data[uplink.data_len] = (delay >> 16) & 0xff;
 			uplink.data_len += 1;
-			uplink.data[uplink.data_len] = (delta >> 8) & 0xff;
+			uplink.data[uplink.data_len] = (delay >> 8) & 0xff;
 			uplink.data_len += 1;
-			uplink.data[uplink.data_len] = delta & 0xff;
+			uplink.data[uplink.data_len] = delay & 0xff;
 			uplink.data_len += 1;
 			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(buffer.size)}, sizeof(buffer.size));
 			uplink.data_len += sizeof(buffer.size);

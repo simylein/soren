@@ -28,6 +28,9 @@ void rp2040_rtc_init(void) {
 	trace("rp2040 init rtc\n");
 
 	rtc_init();
+
+	datetime_t datetime = {.year = 2000, .month = 1, .day = 1, .dotw = 0, .hour = 0, .min = 0, .sec = 0};
+	rtc_set_datetime(&datetime);
 }
 
 void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {
