@@ -251,7 +251,9 @@ int main(void) {
 				error("ds3231 failed to read datetime\n");
 			}
 
-			rtc_set_datetime(&datetime);
+			if (rtc_set_datetime(&datetime) == false) {
+				error("rtc failed to write datetime\n");
+			}
 		}
 
 		debug("woke up from sleep\n");
