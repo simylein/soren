@@ -7,10 +7,8 @@
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
-#include <hardware/rtc.h>
 #include <pico/sleep.h>
 #include <pico/stdlib.h>
-#include <pico/types.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,7 +26,6 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
-	rp2040_rtc_init();
 
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
@@ -76,10 +73,17 @@ int main(void) {
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
 	while (true) {
-		datetime_t captured_at;
-		if (rtc_get_datetime(&captured_at) == false) {
-			error("rtc failed to read datetime\n");
+		datetime_t datetime;
+		if (ds3231_datetime(&datetime) == -1) {
+			error("ds3231 failed to read datetime\n");
 		}
+
+		time_t captured_at;
+		if (datetime_to_time(&datetime, &captured_at) == false) {
+			error("failed to convert datetime\n");
+		}
+
+		info("datetime %02hhu:%02hhu:%02hhu captured at %lld\n", datetime.hour, datetime.min, datetime.sec, captured_at);
 
 		bool reading = next_reading == 0 && config.reading_enable == true;
 		bool metric = next_metric == 0 && config.metric_enable == true;
@@ -113,7 +117,7 @@ int main(void) {
 			error("sx1278 failed to enter standby\n");
 		}
 
-		uplink_t uplink = {.data_len = 0, captured_at = captured_at};
+		uplink_t uplink = {.data_len = 0, .captured_at = captured_at};
 
 		if (reading == true && metric == true) {
 			uplink.kind = 0x03;
@@ -155,22 +159,19 @@ int main(void) {
 			uplink_t uplink;
 			buffer_peek(&uplink);
 
-			datetime_t now;
-			if (rtc_get_datetime(&now) == false) {
-				error("rtc failed to read datetime\n");
-			}
-
-			time_t epoch;
-			if (datetime_to_time(&now, &epoch) == false) {
-				error("failed to convert datetime\n");
+			datetime_t datetime;
+			if (ds3231_datetime(&datetime) == false) {
+				error("ds3231 failed to read datetime\n");
 			}
 
 			time_t captured_at;
-			if (datetime_to_time(&uplink.captured_at, &captured_at) == false) {
+			if (datetime_to_time(&datetime, &captured_at) == false) {
 				error("failed to convert datetime\n");
 			}
 
-			time_t delay = epoch - captured_at;
+			info("datetime %02hhu:%02hhu:%02hhu captured at %lld\n", datetime.hour, datetime.min, datetime.sec, captured_at);
+
+			time_t delay = captured_at - uplink.captured_at;
 
 			uplink.kind |= 0x80;
 
@@ -240,19 +241,9 @@ int main(void) {
 			si7021_init();
 			sx1278_init();
 			rp2040_adc_init();
-			rp2040_rtc_init();
 
 			if (ds3231_alarm_clear() == -1) {
 				error("ds3231 failed to clear alarm\n");
-			}
-
-			datetime_t datetime;
-			if (ds3231_datetime(&datetime) == -1) {
-				error("ds3231 failed to read datetime\n");
-			}
-
-			if (rtc_set_datetime(&datetime) == false) {
-				error("rtc failed to write datetime\n");
 			}
 		}
 
