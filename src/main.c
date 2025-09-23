@@ -76,11 +76,13 @@ int main(void) {
 		datetime_t datetime;
 		if (ds3231_datetime(&datetime) == -1) {
 			error("ds3231 failed to read datetime\n");
+			goto sleep;
 		}
 
 		time_t captured_at;
 		if (datetime_to_time(&datetime, &captured_at) == false) {
 			error("failed to convert datetime\n");
+			goto sleep;
 		}
 
 		info("datetime %02hhu:%02hhu:%02hhu captured at %lld\n", datetime.hour, datetime.min, datetime.sec, captured_at);
@@ -162,11 +164,13 @@ int main(void) {
 			datetime_t datetime;
 			if (ds3231_datetime(&datetime) == -1) {
 				error("ds3231 failed to read datetime\n");
+				goto sleep;
 			}
 
 			time_t captured_at;
 			if (datetime_to_time(&datetime, &captured_at) == false) {
 				error("failed to convert datetime\n");
+				goto sleep;
 			}
 
 			info("datetime %02hhu:%02hhu:%02hhu captured at %lld\n", datetime.hour, datetime.min, datetime.sec, captured_at);
