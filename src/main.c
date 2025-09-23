@@ -163,7 +163,7 @@ int main(void) {
 			if (transceive(&config, &uplink) == -1) {
 				goto sleep;
 			}
-			next_buffer += false;
+			next_buffer = false;
 		}
 
 		if (buffer.size > 0) {
