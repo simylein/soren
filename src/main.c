@@ -160,7 +160,7 @@ int main(void) {
 			buffer_peek(&uplink);
 
 			datetime_t datetime;
-			if (ds3231_datetime(&datetime) == false) {
+			if (ds3231_datetime(&datetime) == -1) {
 				error("ds3231 failed to read datetime\n");
 			}
 
