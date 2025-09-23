@@ -72,6 +72,7 @@ int main(void) {
 
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
+	bool next_buffer = false;
 	while (true) {
 		datetime_t datetime;
 		if (ds3231_datetime(&datetime) == -1) {
@@ -154,6 +155,17 @@ int main(void) {
 			goto sleep;
 		}
 
+		if (buffer.size == 0 && next_buffer == true) {
+			sleep_ms(50);
+			uplink.kind = 0x80;
+			uplink.data_len = 5;
+			memset(uplink.data, 0x00, uplink.data_len);
+			if (transceive(&config, &uplink) == -1) {
+				goto sleep;
+			}
+			next_buffer += false;
+		}
+
 		if (buffer.size > 0) {
 			sleep_ms(50);
 			info("offloading buffer at size %hu\n", buffer.size);
@@ -195,13 +207,7 @@ int main(void) {
 			buffer_pop();
 
 			if (buffer.size == 0) {
-				sleep_ms(50);
-				uplink.kind = 0x80;
-				uplink.data_len = 5;
-				memset(uplink.data, 0x00, uplink.data_len);
-				if (transceive(&config, &uplink) == -1) {
-					goto sleep;
-				}
+				next_buffer = true;
 			}
 		}
 
