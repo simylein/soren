@@ -55,6 +55,7 @@ extern const uint sx1278_pin_miso;
 extern const uint sx1278_pin_nss;
 extern const uint sx1278_pin_sck;
 extern const uint sx1278_pin_mosi;
+extern const uint sx1278_pin_reset;
 
 void config_write(config_t *config);
 void config_read(config_t *config);

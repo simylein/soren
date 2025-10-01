@@ -27,6 +27,8 @@ int main(void) {
 	sx1278_init();
 	rp2040_adc_init();
 
+	sx1278_reset();
+
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
 	}

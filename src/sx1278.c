@@ -24,7 +24,8 @@ const uint8_t reg_modem_config_2 = 0x1e;
 const uint8_t reg_sync_word = 0x39;
 
 void sx1278_init(void) {
-	trace("sx1278 init gpio %d %d %d and %d\n", sx1278_pin_miso, sx1278_pin_nss, sx1278_pin_sck, sx1278_pin_mosi);
+	trace("sx1278 init gpio %d %d %d %d and %d\n", sx1278_pin_miso, sx1278_pin_nss, sx1278_pin_sck, sx1278_pin_mosi,
+				sx1278_pin_reset);
 
 	spi_init(sx1278_spi_inst, sx1278_spi_speed);
 	spi_set_format(sx1278_spi_inst, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
@@ -34,8 +35,10 @@ void sx1278_init(void) {
 	gpio_set_function(sx1278_pin_miso, GPIO_FUNC_SPI);
 
 	gpio_init(sx1278_pin_nss);
+	gpio_init(sx1278_pin_reset);
 
 	gpio_set_dir(sx1278_pin_nss, GPIO_OUT);
+	gpio_set_dir(sx1278_pin_reset, GPIO_OUT);
 }
 
 int sx1278_read_register(uint8_t reg, uint8_t *value) {
@@ -62,6 +65,15 @@ int sx1278_write_register(uint8_t reg, uint8_t value) {
 	gpio_put(sx1278_pin_nss, 1);
 
 	return 0;
+}
+
+int sx1278_reset(void) {
+	gpio_put(sx1278_pin_reset, 0);
+
+	sleep_us(5000);
+	trace("sx1278 reset\n");
+
+	gpio_put(sx1278_pin_reset, 1);
 }
 
 int sx1278_sleep(uint32_t timeout_ms) {

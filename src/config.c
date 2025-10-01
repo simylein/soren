@@ -45,6 +45,7 @@ const uint sx1278_pin_miso = 16;
 const uint sx1278_pin_nss = 17;
 const uint sx1278_pin_sck = 18;
 const uint sx1278_pin_mosi = 19;
+const uint sx1278_pin_reset = 20;
 
 void config_write(config_t *config) {
 	trace("config write id 0x%02x%02x\n", config->id[0], config->id[1]);

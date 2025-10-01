@@ -4,6 +4,8 @@
 
 void sx1278_init(void);
 
+int sx1278_reset(void);
+
 int sx1278_sleep(uint32_t timeout_ms);
 int sx1278_standby(uint32_t timeout_ms);
 
