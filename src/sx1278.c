@@ -38,7 +38,8 @@ void sx1278_init(void) {
 	gpio_init(sx1278_pin_reset);
 
 	gpio_set_dir(sx1278_pin_nss, GPIO_OUT);
-	gpio_set_dir(sx1278_pin_reset, GPIO_OUT);
+	gpio_set_dir(sx1278_pin_reset, GPIO_IN);
+	gpio_disable_pulls(sx1278_pin_reset);
 }
 
 int sx1278_read_register(uint8_t reg, uint8_t *value) {
@@ -68,12 +69,14 @@ int sx1278_write_register(uint8_t reg, uint8_t value) {
 }
 
 int sx1278_reset(void) {
+	gpio_set_dir(sx1278_pin_reset, GPIO_OUT);
 	gpio_put(sx1278_pin_reset, 0);
 
 	sleep_us(5000);
 	trace("sx1278 reset\n");
 
-	gpio_put(sx1278_pin_reset, 1);
+	gpio_set_dir(sx1278_pin_reset, GPIO_IN);
+	gpio_disable_pulls(sx1278_pin_reset);
 }
 
 int sx1278_sleep(uint32_t timeout_ms) {
