@@ -72,6 +72,29 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
+	datetime_t datetime;
+	if (ds3231_datetime(&datetime) == -1) {
+		error("ds3231 failed to read datetime\n");
+		goto sleep;
+	}
+
+	time_t captured_at;
+	if (datetime_to_time(&datetime, &captured_at) == false) {
+		error("failed to convert datetime\n");
+		goto sleep;
+	}
+
+	uplink_t uplink = {.kind = 0x04, .data_len = 0, .captured_at = captured_at};
+	memcpy(&uplink.data[uplink.data_len], config.firmware, sizeof(config.firmware));
+	uplink.data_len += sizeof(config.firmware);
+	memcpy(&uplink.data[uplink.data_len], config.hardware, sizeof(config.hardware));
+	uplink.data_len += sizeof(config.hardware);
+
+	if (transceive(&config, &uplink) == -1) {
+		buffer_push(&uplink);
+		info("buffered uplink at size %hu\n", buffer.size);
+	}
+
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
 	bool next_buffer = false;
