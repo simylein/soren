@@ -4,6 +4,7 @@
 #include "ds3231.h"
 #include "endian.h"
 #include "logger.h"
+#include "math.h"
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
@@ -13,12 +14,15 @@
 #include <stdint.h>
 #include <string.h>
 
-const bool prod = true;
+const bool deep_sleep = true;
 
 int main(void) {
-	if (!prod) {
+	if (!deep_sleep) {
 		rp2040_stdio_init();
 	}
+
+	config_t config;
+	config_read(&config);
 
 	info("starting soren sensor firmware\n");
 
@@ -32,9 +36,6 @@ int main(void) {
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
 	}
-
-	config_t config;
-	config_read(&config);
 
 	if (sx1278_standby(timeout) == -1) {
 		error("sx1278 failed to enter standby\n");
@@ -95,9 +96,12 @@ int main(void) {
 		info("buffered uplink at size %hu\n", buffer.size);
 	}
 
+	bool acknowledged = false;
+
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
-	bool next_buffer = false;
+	uint16_t next_buffer = 0;
+
 	while (true) {
 		datetime_t datetime;
 		if (ds3231_datetime(&datetime) == -1) {
@@ -113,12 +117,26 @@ int main(void) {
 
 		info("datetime %02hhu:%02hhu:%02hhu captured at %lld\n", datetime.hour, datetime.min, datetime.sec, captured_at);
 
-		bool reading = next_reading == 0 && config.reading_enable == true;
-		bool metric = next_metric == 0 && config.metric_enable == true;
+		bool do_reading = next_reading == 0 && config.reading_enable == true;
+		bool do_metric = next_metric == 0 && config.metric_enable == true;
+		bool do_buffer = next_buffer == 0 && config.buffer_enable == true;
 
-		uint16_t temperature;
-		uint16_t humidity;
-		if (reading == true) {
+		uplink_t uplink = {.data_len = 0, .captured_at = captured_at};
+
+		if (do_reading == true && do_metric == true) {
+			uplink.kind = 0x03;
+		} else if (do_reading == true) {
+			uplink.kind = 0x01;
+		} else if (do_metric == true) {
+			uplink.kind = 0x02;
+		} else {
+			uplink.kind = 0x00;
+		}
+
+		if (do_reading == true) {
+			uint16_t temperature;
+			uint16_t humidity;
+
 			if (si7021_temperature(&temperature, timeout) == -1) {
 				error("si7021 failed to read temperature\n");
 				goto sleep;
@@ -130,40 +148,22 @@ int main(void) {
 			};
 
 			info("temperature %.2f humidity %.2f\n", si7021_temperature_human(temperature), si7021_humidity_human(humidity));
-		}
 
-		uint16_t photovoltaic;
-		uint16_t battery;
-		if (metric == true) {
-			rp2040_photovoltaic(&photovoltaic, 5);
-			rp2040_battery(&battery, 5);
-
-			info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
-		}
-
-		if (sx1278_standby(timeout) == -1) {
-			error("sx1278 failed to enter standby\n");
-		}
-
-		uplink_t uplink = {.data_len = 0, .captured_at = captured_at};
-
-		if (reading == true && metric == true) {
-			uplink.kind = 0x03;
-		} else if (reading == true) {
-			uplink.kind = 0x01;
-		} else if (metric == true) {
-			uplink.kind = 0x02;
-		} else {
-			uplink.kind = 0x00;
-		}
-
-		if (reading == true) {
 			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(temperature)}, sizeof(temperature));
 			uplink.data_len += sizeof(temperature);
 			memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(humidity)}, sizeof(humidity));
 			uplink.data_len += sizeof(humidity);
 		}
-		if (metric == true) {
+
+		if (do_metric == true) {
+			uint16_t photovoltaic;
+			uint16_t battery;
+
+			rp2040_photovoltaic(&photovoltaic, 5);
+			rp2040_battery(&battery, 5);
+
+			info("photovoltaic %.3f battery %.3f\n", rp2040_photovoltaic_human(photovoltaic), rp2040_battery_human(battery));
+
 			uint8_t packed[3];
 			packed[0] = (uint8_t)(photovoltaic >> 4);
 			packed[1] = (uint8_t)((photovoltaic & 0x0f) << 4) | (uint8_t)(battery >> 8);
@@ -172,27 +172,39 @@ int main(void) {
 			uplink.data_len += sizeof(packed);
 		}
 
-		if (transceive(&config, &uplink) == -1) {
-			if (uplink.kind != 0x00) {
-				buffer_push(&uplink);
-				info("buffered uplink at size %hu\n", buffer.size);
-			}
-			goto sleep;
+		if (sx1278_standby(timeout) == -1) {
+			error("sx1278 failed to enter standby\n");
 		}
 
-		if (buffer.size == 0 && next_buffer == true) {
-			sleep_ms(50);
+		if (uplink.kind != 0x00) {
+			if (transceive(&config, &uplink) == -1) {
+				buffer_push(&uplink);
+				info("buffered uplink at size %hu\n", buffer.size);
+				next_buffer = config.buffer_interval;
+				acknowledged = false;
+				goto sleep;
+			}
+			acknowledged = true;
+		}
+
+		if (do_buffer == true && buffer.size == 0) {
+			sleep_ms(256);
+			info("buffer offloaded size %hu\n", buffer.size);
+
 			uplink.kind = 0x80;
 			uplink.data_len = 5;
 			memset(uplink.data, 0x00, uplink.data_len);
+
 			if (transceive(&config, &uplink) == -1) {
+				acknowledged = false;
 				goto sleep;
 			}
-			next_buffer = false;
+
+			next_buffer = 3600;
 		}
 
-		if (buffer.size > 0) {
-			sleep_ms(50);
+		if (do_buffer == true && buffer.size > 0) {
+			sleep_ms(256);
 			info("offloading buffer at size %hu\n", buffer.size);
 
 			uplink_t uplink;
@@ -226,14 +238,11 @@ int main(void) {
 			uplink.data_len += sizeof(buffer.size);
 
 			if (transceive(&config, &uplink) == -1) {
+				acknowledged = false;
 				goto sleep;
 			}
 
 			buffer_pop();
-
-			if (buffer.size == 0) {
-				next_buffer = true;
-			}
 		}
 
 		if (sx1278_standby(timeout) == -1) {
@@ -252,16 +261,21 @@ int main(void) {
 		if (next_metric == 0) {
 			next_metric = config.metric_interval;
 		}
-		if (next_reading < next_metric) {
-			interval = next_reading;
-		} else {
-			interval = next_metric;
+		if (next_buffer == 0) {
+			next_buffer = config.buffer_interval;
 		}
+
+		interval = min(next_reading, next_metric);
+		if (acknowledged == true) {
+			interval = min(interval, next_buffer);
+		}
+
 		trace("next reading in %hu seconds\n", next_reading);
 		trace("next metric in %hu seconds\n", next_metric);
+		trace("next buffer in %hu seconds\n", next_buffer);
 		debug("sleeping for %hu seconds\n", interval);
 
-		if (!prod) {
+		if (!deep_sleep) {
 			sleep_ms(interval * 1000);
 		} else {
 			if (ds3231_alarm(interval) == -1) {
@@ -283,7 +297,8 @@ int main(void) {
 		}
 
 		debug("woke up from sleep\n");
-		next_reading -= interval;
-		next_metric -= interval;
+		next_reading = sub(next_reading, interval);
+		next_metric = sub(next_metric, interval);
+		next_buffer = sub(next_buffer, interval);
 	}
 }

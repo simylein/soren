@@ -10,8 +10,10 @@ typedef struct config_t {
 	uint8_t hardware[2];
 	bool reading_enable;
 	bool metric_enable;
+	bool buffer_enable;
 	uint16_t reading_interval;
 	uint16_t metric_interval;
+	uint16_t buffer_interval;
 	uint32_t frequency;
 	uint32_t bandwidth;
 	uint8_t coding_rate;
