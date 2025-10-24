@@ -11,6 +11,9 @@
 
 config_t config;
 
+const bool led_debug = false;
+const bool deep_sleep = true;
+
 const char *name = "soren";
 
 const uint8_t log_level = 4;
@@ -19,6 +22,7 @@ const bool log_transmits = true;
 
 const uint32_t timeout = 256;
 
+const uint rp2040_pin_led = 25;
 const uint rp2040_pin_photovoltaic = 26;
 const uint rp2040_adc_photovoltaic = 0;
 const uint rp2040_en_photovoltaic = 10;

@@ -8,6 +8,8 @@ int sx1278_reset(void);
 
 int sx1278_sleep(uint32_t timeout_ms);
 int sx1278_standby(uint32_t timeout_ms);
+int sx1278_tx(uint32_t timeout_ms);
+int sx1278_rx(uint32_t timeout_ms);
 
 int sx1278_frequency(uint32_t frequency);
 int sx1278_tx_power(uint8_t power);

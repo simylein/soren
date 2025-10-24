@@ -24,6 +24,24 @@ void rp2040_adc_init(void) {
 	gpio_set_dir(rp2040_en_battery, GPIO_OUT);
 }
 
+void rp2040_led_init(void) {
+	trace("rp2040 init gpio %d\n", rp2040_pin_led);
+
+	gpio_init(rp2040_pin_led);
+
+	gpio_set_dir(rp2040_pin_led, GPIO_OUT);
+}
+
+void rp2040_led_blink(uint8_t blinks) {
+	for (uint8_t ind = 0; ind < blinks; ind++) {
+		gpio_put(rp2040_pin_led, 1);
+		sleep_ms(64);
+		gpio_put(rp2040_pin_led, 0);
+		sleep_ms(64);
+	}
+	sleep_ms(256);
+}
+
 void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {
 	gpio_put(rp2040_en_photovoltaic, 1);
 

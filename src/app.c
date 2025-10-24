@@ -1,8 +1,10 @@
 #include "app.h"
 #include "config.h"
 #include "logger.h"
+#include "rp2040.h"
 #include "sx1278.h"
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 int transceive(config_t *config, uplink_t *uplink) {
@@ -16,7 +18,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 	memcpy(&tx_data[tx_data_len], uplink->data, uplink->data_len);
 	tx_data_len += uplink->data_len;
 
-	if (sx1278_transmit(&tx_data, tx_data_len, 2048)) {
+	if (sx1278_transmit(&tx_data, tx_data_len, 2048 + (rand() % 512)) == -1) {
 		error("sx1278 failed to transmit packet\n");
 		return -1;
 	}
@@ -24,9 +26,14 @@ int transceive(config_t *config, uplink_t *uplink) {
 	tx("id %02x%02x kind %02x bytes %hhu power %hhu sf %hhu\n", tx_data[0], tx_data[1], tx_data[2], tx_data_len, config->tx_power,
 		 config->spreading_factor);
 
+	if (led_debug == true) {
+		sx1278_rx(timeout);
+		rp2040_led_blink(3);
+	}
+
 	uint8_t rx_data[256];
 	uint8_t rx_data_len = 0;
-	if (sx1278_receive(&rx_data, &rx_data_len, 2048) == -1) {
+	if (sx1278_receive(&rx_data, &rx_data_len, 2048 + (rand() % 512)) == -1) {
 		error("sx1278 failed to receive packet\n");
 		return -1;
 	}
@@ -55,6 +62,10 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu\n", rx_data[0], rx_data[1], rx_data[2], rx_data_len, rssi,
 		 snr / 4.0f, config->spreading_factor);
+
+	if (led_debug == true) {
+		rp2040_led_blink(4);
+	}
 
 	return 0;
 }

@@ -12,12 +12,13 @@
 #include <pico/stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
-const bool deep_sleep = true;
-
 int main(void) {
-	if (!deep_sleep) {
+	srand(time(NULL));
+
+	if (deep_sleep == false) {
 		rp2040_stdio_init();
 	}
 
@@ -30,6 +31,9 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
+	if (led_debug == true) {
+		rp2040_led_init();
+	}
 
 	sx1278_reset();
 
@@ -73,6 +77,10 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
+	if (led_debug == true) {
+		rp2040_led_blink(8);
+	}
+
 	datetime_t datetime;
 	if (ds3231_datetime(&datetime) == -1) {
 		error("ds3231 failed to read datetime\n");
@@ -103,6 +111,10 @@ int main(void) {
 	uint16_t next_buffer = 0;
 
 	while (true) {
+		if (led_debug == true) {
+			rp2040_led_blink(1);
+		}
+
 		datetime_t datetime;
 		if (ds3231_datetime(&datetime) == -1) {
 			error("ds3231 failed to read datetime\n");
@@ -170,6 +182,10 @@ int main(void) {
 			packed[2] = (uint8_t)(battery & 0xff);
 			memcpy(&uplink.data[uplink.data_len], packed, sizeof(packed));
 			uplink.data_len += sizeof(packed);
+		}
+
+		if (led_debug == true) {
+			rp2040_led_blink(2);
 		}
 
 		if (sx1278_standby(timeout) == -1) {
@@ -275,7 +291,7 @@ int main(void) {
 		trace("next buffer in %hu seconds\n", next_buffer);
 		debug("sleeping for %hu seconds\n", interval);
 
-		if (!deep_sleep) {
+		if (deep_sleep == false) {
 			sleep_ms(interval * 1000);
 		} else {
 			if (ds3231_alarm(interval) == -1) {

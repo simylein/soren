@@ -23,6 +23,9 @@ typedef struct config_t {
 	bool checksum;
 } config_t;
 
+extern const bool led_debug;
+extern const bool deep_sleep;
+
 extern const char *name;
 
 extern const uint8_t log_level;
@@ -31,6 +34,7 @@ extern const bool log_transmits;
 
 extern const uint32_t timeout;
 
+extern const uint rp2040_pin_led;
 extern const uint rp2040_pin_photovoltaic;
 extern const uint rp2040_adc_photovoltaic;
 extern const uint rp2040_en_photovoltaic;
