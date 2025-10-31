@@ -108,7 +108,7 @@ int main(void) {
 
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
-	uint16_t next_buffer = 0;
+	uint16_t next_buffer = 3600;
 
 	while (true) {
 		if (led_debug == true) {
