@@ -1,15 +1,13 @@
 #include "ds3231.h"
 #include "config.h"
 #include "logger.h"
+#include "pcf8563.h"
 #include <pico/stdlib.h>
 #include <pico/types.h>
 
 const uint8_t reg_alarm = 0x07;
 const uint8_t reg_ctrl = 0x0e;
 const uint8_t reg_status = 0x0f;
-
-uint8_t bin2bcd(uint8_t value) { return (uint8_t)(((value / 10) << 4) | (value % 10)); }
-uint8_t bcd2bin(uint8_t value) { return (uint8_t)((value >> 4) * 10 + (value & 0x0f)); }
 
 void ds3231_init(void) {
 	trace("ds3231 init gpio %d %d and %d\n", ds3231_pin_sda, ds3231_pin_scl, ds3231_pin_int);

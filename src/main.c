@@ -1,10 +1,10 @@
 #include "app.h"
 #include "buffer.h"
 #include "config.h"
-#include "ds3231.h"
 #include "endian.h"
 #include "logger.h"
 #include "math.h"
+#include "pcf8563.h"
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
@@ -27,7 +27,7 @@ int main(void) {
 
 	info("starting soren sensor firmware\n");
 
-	ds3231_init();
+	pcf8563_init();
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
@@ -82,8 +82,8 @@ int main(void) {
 	}
 
 	datetime_t datetime;
-	if (ds3231_datetime(&datetime) == -1) {
-		error("ds3231 failed to read datetime\n");
+	if (pcf8563_datetime(&datetime) == -1) {
+		error("pcf8563 failed to read datetime\n");
 		goto sleep;
 	}
 
@@ -116,8 +116,8 @@ int main(void) {
 		}
 
 		datetime_t datetime;
-		if (ds3231_datetime(&datetime) == -1) {
-			error("ds3231 failed to read datetime\n");
+		if (pcf8563_datetime(&datetime) == -1) {
+			error("pcf8563 failed to read datetime\n");
 			goto sleep;
 		}
 
@@ -227,8 +227,8 @@ int main(void) {
 			buffer_peek(&uplink);
 
 			datetime_t datetime;
-			if (ds3231_datetime(&datetime) == -1) {
-				error("ds3231 failed to read datetime\n");
+			if (pcf8563_datetime(&datetime) == -1) {
+				error("pcf8563 failed to read datetime\n");
 				goto sleep;
 			}
 
@@ -294,21 +294,21 @@ int main(void) {
 		if (deep_sleep == false) {
 			sleep_ms(interval * 1000);
 		} else {
-			if (ds3231_alarm(interval) == -1) {
-				error("ds3231 failed to write alarm\n");
+			if (pcf8563_alarm(interval) == -1) {
+				error("pcf8563 failed to write alarm\n");
 			}
 
 			sleep_run_from_xosc();
-			sleep_goto_dormant_until_pin(ds3231_pin_int, true, false);
+			sleep_goto_dormant_until_pin(pcf8563_pin_int, true, false);
 			sleep_power_up();
 
-			ds3231_init();
+			pcf8563_init();
 			si7021_init();
 			sx1278_init();
 			rp2040_adc_init();
 
-			if (ds3231_alarm_clear() == -1) {
-				error("ds3231 failed to clear alarm\n");
+			if (pcf8563_alarm_clear() == -1) {
+				error("pcf8563 failed to clear alarm\n");
 			}
 		}
 

@@ -49,6 +49,13 @@ extern const uint ds3231_pin_scl;
 extern const uint ds3231_pin_int;
 extern const uint8_t ds3231_addr;
 
+extern i2c_inst_t *const pcf8563_i2c_inst;
+extern const uint pcf8563_i2c_speed;
+extern const uint pcf8563_pin_sda;
+extern const uint pcf8563_pin_scl;
+extern const uint pcf8563_pin_int;
+extern const uint8_t pcf8563_addr;
+
 extern i2c_inst_t *const si7021_i2c_inst;
 extern const uint si7021_i2c_speed;
 extern const uint si7021_pin_sda;

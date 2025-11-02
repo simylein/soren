@@ -37,6 +37,13 @@ const uint ds3231_pin_scl = 1;
 const uint ds3231_pin_int = 2;
 const uint8_t ds3231_addr = 0x68;
 
+i2c_inst_t *const pcf8563_i2c_inst = i2c0;
+const uint pcf8563_i2c_speed = 1 * 100 * 1000;
+const uint pcf8563_pin_sda = 0;
+const uint pcf8563_pin_scl = 1;
+const uint pcf8563_pin_int = 2;
+const uint8_t pcf8563_addr = 0x51;
+
 i2c_inst_t *const si7021_i2c_inst = i2c1;
 const uint si7021_i2c_speed = 1 * 100 * 1000;
 const uint si7021_pin_sda = 6;
