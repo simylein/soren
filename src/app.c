@@ -13,6 +13,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	memcpy(&tx_data[tx_data_len], config->id, sizeof(config->id));
 	tx_data_len += sizeof(config->id);
+	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0;
+	tx_data_len += sizeof(config->tx_power);
 	tx_data[tx_data_len] = uplink->kind;
 	tx_data_len += sizeof(uplink->kind);
 	memcpy(&tx_data[tx_data_len], uplink->data, uplink->data_len);
@@ -23,8 +25,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	tx("id %02x%02x kind %02x bytes %hhu power %hhu sf %hhu\n", tx_data[0], tx_data[1], tx_data[2], tx_data_len, config->tx_power,
-		 config->spreading_factor);
+	tx("id %02x%02x kind %02x bytes %hhu sf %hhu power %hhu\n", tx_data[0], tx_data[1], tx_data[3], tx_data_len,
+		 config->spreading_factor, ((tx_data[2] >> 4) & 0x0f) + 2);
 
 	if (led_debug == true) {
 		sx1278_rx(timeout);
@@ -38,7 +40,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	if (rx_data_len < 3) {
+	if (rx_data_len < 4) {
 		debug("sx1278 received packet without headers\n");
 		return -1;
 	}
@@ -60,8 +62,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu\n", rx_data[0], rx_data[1], rx_data[2], rx_data_len, rssi,
-		 snr / 4.0f, config->spreading_factor);
+	rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu power %hhu\n", rx_data[0], rx_data[1], rx_data[3], rx_data_len,
+		 rssi, snr / 4.0f, config->spreading_factor, ((rx_data[2] >> 4) & 0x0f) + 2);
 
 	if (led_debug == true) {
 		rp2040_led_blink(4);
