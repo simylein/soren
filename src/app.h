@@ -11,4 +11,6 @@ typedef struct uplink_t {
 	time_t captured_at;
 } uplink_t;
 
+int configure(config_t *config);
+
 int transceive(config_t *config, uplink_t *uplink);

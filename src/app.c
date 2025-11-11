@@ -9,6 +9,50 @@
 #include <stdlib.h>
 #include <string.h>
 
+int configure(config_t *config) {
+	if (sx1278_standby(timeout) == -1) {
+		error("sx1278 failed to enter standby\n");
+		return -1;
+	}
+
+	if (sx1278_frequency(config->frequency) == -1) {
+		error("sx1278 failed to configure frequency\n");
+		return -1;
+	}
+
+	if (sx1278_tx_power(config->tx_power) == -1) {
+		error("sx1278 failed to configure tx power\n");
+		return -1;
+	}
+
+	if (sx1278_coding_rate(config->coding_rate) == -1) {
+		error("sx1278 failed to configure coding rate\n");
+		return -1;
+	}
+
+	if (sx1278_bandwidth(config->bandwidth) == -1) {
+		error("sx1278 failed to configure bandwidth\n");
+		return -1;
+	}
+
+	if (sx1278_spreading_factor(config->spreading_factor) == -1) {
+		error("sx1278 failed to configure spreading factor\n");
+		return -1;
+	}
+
+	if (sx1278_checksum(config->checksum) == -1) {
+		error("sx1278 failed to configure checksum\n");
+		return -1;
+	}
+
+	if (sx1278_sync_word(config->sync_word) == -1) {
+		error("sx1278 failed to configure sync word\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 int transceive(config_t *config, uplink_t *uplink) {
 	uint8_t tx_data[256];
 	uint8_t tx_data_len = 0;
@@ -101,6 +145,50 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config->metric_interval = metric_interval;
 		config->buffer_interval = buffer_interval;
 		config_write(config);
+	}
+
+	if (rx_data[3] == 0x06 && rx_data_len == 16) {
+		uint32_t frequency = (uint32_t)((rx_data[4] << 24) | (rx_data[5] << 16) | (rx_data[6] << 8) | rx_data[7]);
+		uint32_t bandwidth = (uint32_t)((rx_data[8] << 16) | (rx_data[9] << 8) | rx_data[10]);
+		uint8_t coding_rate = rx_data[11];
+		uint8_t spreading_factor = rx_data[12];
+		uint8_t tx_power = rx_data[13];
+		uint8_t sync_word = rx_data[14];
+		bool checksum = (bool)rx_data[15];
+
+		if (frequency < 400 * 1000 * 1000 || frequency > 500 * 1000 * 1000) {
+			warn("invalid frequency %u\n", frequency);
+			return 0;
+		}
+
+		if (bandwidth < 7800 || bandwidth > 500 * 1000) {
+			warn("invalid bandwidth %u\n", bandwidth);
+			return 0;
+		}
+
+		if (coding_rate < 5 || coding_rate > 8) {
+			warn("invalid coding rate %hhu\n", coding_rate);
+			return -1;
+		}
+
+		if (spreading_factor < 7 || spreading_factor > 12) {
+			warn("invalid spreading factor %hhu\n", spreading_factor);
+			return -1;
+		}
+
+		if (tx_power < 2 || tx_power > 17) {
+			warn("invalid tx power %hhu\n", tx_power);
+			return -1;
+		}
+
+		config->frequency = frequency;
+		config->bandwidth = bandwidth;
+		config->coding_rate = coding_rate;
+		config->spreading_factor = spreading_factor;
+		config->tx_power = tx_power;
+		config->checksum = checksum;
+		config_write(config);
+		configure(config);
 	}
 
 	return 0;

@@ -41,37 +41,7 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
-	if (sx1278_standby(timeout) == -1) {
-		error("sx1278 failed to enter standby\n");
-	}
-
-	if (sx1278_frequency(config.frequency) == -1) {
-		error("sx1278 failed to configure frequency\n");
-	}
-
-	if (sx1278_tx_power(config.tx_power) == -1) {
-		error("sx1278 failed to configure tx power\n");
-	}
-
-	if (sx1278_coding_rate(config.coding_rate) == -1) {
-		error("sx1278 failed to configure coding rate\n");
-	}
-
-	if (sx1278_bandwidth(config.bandwidth) == -1) {
-		error("sx1278 failed to configure bandwidth\n");
-	}
-
-	if (sx1278_spreading_factor(config.spreading_factor) == -1) {
-		error("sx1278 failed to configure spreading factor\n");
-	}
-
-	if (sx1278_checksum(config.checksum) == -1) {
-		error("sx1278 failed to configure checksum\n");
-	}
-
-	if (sx1278_sync_word(config.sync_word) == -1) {
-		error("sx1278 failed to configure sync word\n");
-	}
+	configure(&config);
 
 	if (sx1278_sleep(timeout) == -1) {
 		error("sx1278 failed to enter sleep\n");
