@@ -1,8 +1,10 @@
 #include "app.h"
 #include "config.h"
+#include "endian.h"
 #include "logger.h"
 #include "rp2040.h"
 #include "sx1278.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,6 +69,38 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	if (led_debug == true) {
 		rp2040_led_blink(4);
+	}
+
+	if (rx_data[3] == 0x05 && rx_data_len == 11) {
+		bool reading_enable = (bool)(rx_data[4] & 0x80);
+		bool metric_enable = (bool)(rx_data[4] & 0x40);
+		bool buffer_enable = (bool)(rx_data[4] & 0x20);
+		uint16_t reading_interval = (uint16_t)((rx_data[5] << 8) | rx_data[6]);
+		uint16_t metric_interval = (uint16_t)((rx_data[7] << 8) | rx_data[8]);
+		uint16_t buffer_interval = (uint16_t)((rx_data[9] << 8) | rx_data[10]);
+
+		if (reading_interval < 8 || reading_interval > 4096) {
+			warn("invalid reading interval %hu\n", reading_interval);
+			return 0;
+		}
+
+		if (metric_interval < 8 || metric_interval > 4096) {
+			warn("invalid metric interval %hu\n", metric_interval);
+			return 0;
+		}
+
+		if (buffer_interval < 8 || buffer_interval > 4096) {
+			warn("invalid buffer interval %hu\n", buffer_interval);
+			return 0;
+		}
+
+		config->reading_enable = reading_enable;
+		config->metric_enable = metric_enable;
+		config->buffer_enable = buffer_enable;
+		config->reading_interval = reading_interval;
+		config->metric_interval = metric_interval;
+		config->buffer_interval = buffer_interval;
+		config_write(config);
 	}
 
 	return 0;
