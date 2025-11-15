@@ -186,6 +186,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config->coding_rate = coding_rate;
 		config->spreading_factor = spreading_factor;
 		config->tx_power = tx_power;
+		config->sync_word = sync_word;
 		config->checksum = checksum;
 		config_write(config);
 		configure(config);
