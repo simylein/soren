@@ -27,6 +27,8 @@ int main(void) {
 	config_t config;
 	config_read(&config);
 
+	srand((config.id[0] << 8) | config.id[1]);
+
 	info("starting soren sensor firmware\n");
 
 	pcf8563_init();
