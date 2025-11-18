@@ -22,6 +22,7 @@ const bool log_transmits = true;
 
 const uint32_t timeout = 256;
 
+const uint rp2040_clock_speed = 16 * 1000 * 1000;
 const uint rp2040_pin_led = 25;
 const uint rp2040_pin_photovoltaic = 26;
 const uint rp2040_adc_photovoltaic = 0;

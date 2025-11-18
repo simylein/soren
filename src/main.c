@@ -16,7 +16,9 @@
 #include <string.h>
 
 int main(void) {
-	srand(time(NULL));
+	if (deep_sleep == true) {
+		rp2040_clocks(rp2040_clock_speed);
+	}
 
 	if (deep_sleep == false) {
 		rp2040_stdio_init();

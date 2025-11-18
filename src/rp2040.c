@@ -1,8 +1,16 @@
 #include "config.h"
+#include "hardware/clocks.h"
 #include "logger.h"
 #include <hardware/adc.h>
 #include <hardware/rtc.h>
 #include <pico/stdlib.h>
+
+void rp2040_clocks(uint32_t frequency) {
+	uint32_t src_frequency = clock_get_hz(clk_sys);
+
+	clock_configure(clk_sys, CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLKSRC_CLK_SYS_AUX, CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,
+									src_frequency, frequency);
+}
 
 void rp2040_stdio_init(void) {
 	trace("rp2040 init stdio\n");

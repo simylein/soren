@@ -1,5 +1,7 @@
 #pragma once
 
+void rp2040_clocks(uint32_t frequency);
+
 void rp2040_stdio_init(void);
 void rp2040_adc_init(void);
 void rp2040_led_init(void);

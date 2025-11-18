@@ -34,6 +34,7 @@ extern const bool log_transmits;
 
 extern const uint32_t timeout;
 
+extern const uint rp2040_clock_speed;
 extern const uint rp2040_pin_led;
 extern const uint rp2040_pin_photovoltaic;
 extern const uint rp2040_adc_photovoltaic;
