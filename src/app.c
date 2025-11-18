@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "rp2040.h"
 #include "sx1278.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -66,7 +67,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 	memcpy(&tx_data[tx_data_len], uplink->data, uplink->data_len);
 	tx_data_len += uplink->data_len;
 
-	if (sx1278_transmit(&tx_data, tx_data_len, 2048 + (rand() % 512)) == -1) {
+	if (sx1278_transmit(&tx_data, tx_data_len, (uint32_t)pow(2, config->spreading_factor - 4) * 16 + 16) == -1) {
 		error("sx1278 failed to transmit packet\n");
 		return -1;
 	}
@@ -81,7 +82,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	uint8_t rx_data[256];
 	uint8_t rx_data_len = 0;
-	if (sx1278_receive(&rx_data, &rx_data_len, 2048 + (rand() % 512)) == -1) {
+	if (sx1278_receive(&rx_data, &rx_data_len, (uint32_t)pow(2, config->spreading_factor - 4) * 16 + 16) == -1) {
 		error("sx1278 failed to receive packet\n");
 		return -1;
 	}
