@@ -8,6 +8,7 @@
 #include "rp2040.h"
 #include "si7021.h"
 #include "sx1278.h"
+#include <math.h>
 #include <pico/sleep.h>
 #include <pico/stdlib.h>
 #include <stdbool.h>
@@ -76,6 +77,7 @@ int main(void) {
 	if (transceive(&config, &uplink) == -1) {
 		buffer_push(&uplink);
 		info("buffered uplink at size %hu\n", buffer.size);
+		sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
 	}
 
 	bool acknowledged = false;
@@ -172,6 +174,7 @@ int main(void) {
 				info("buffered uplink at size %hu\n", buffer.size);
 				next_buffer = config.buffer_interval;
 				acknowledged = false;
+				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
 				goto sleep;
 			}
 			acknowledged = true;
@@ -187,6 +190,7 @@ int main(void) {
 
 			if (transceive(&config, &uplink) == -1) {
 				acknowledged = false;
+				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
 				goto sleep;
 			}
 
@@ -229,6 +233,7 @@ int main(void) {
 
 			if (transceive(&config, &uplink) == -1) {
 				acknowledged = false;
+				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
 				goto sleep;
 			}
 
