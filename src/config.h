@@ -8,6 +8,7 @@ typedef struct config_t {
 	uint8_t id[2];
 	uint8_t firmware[2];
 	uint8_t hardware[2];
+	bool led_debug;
 	bool reading_enable;
 	bool metric_enable;
 	bool buffer_enable;
@@ -23,7 +24,6 @@ typedef struct config_t {
 	bool checksum;
 } config_t;
 
-extern const bool led_debug;
 extern const bool deep_sleep;
 
 extern const char *name;

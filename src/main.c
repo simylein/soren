@@ -36,7 +36,7 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
-	if (led_debug == true) {
+	if (config.led_debug == true) {
 		rp2040_led_init();
 	}
 
@@ -52,7 +52,7 @@ int main(void) {
 		error("sx1278 failed to enter sleep\n");
 	}
 
-	if (led_debug == true) {
+	if (config.led_debug == true) {
 		rp2040_led_blink(8);
 	}
 
@@ -87,7 +87,7 @@ int main(void) {
 	uint16_t next_buffer = 3600;
 
 	while (true) {
-		if (led_debug == true) {
+		if (config.led_debug == true) {
 			rp2040_led_blink(1);
 		}
 
@@ -160,7 +160,7 @@ int main(void) {
 			uplink.data_len += sizeof(packed);
 		}
 
-		if (led_debug == true) {
+		if (config.led_debug == true) {
 			rp2040_led_blink(2);
 		}
 

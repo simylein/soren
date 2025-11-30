@@ -11,7 +11,6 @@
 
 config_t config;
 
-const bool led_debug = false;
 const bool deep_sleep = true;
 
 const char *name = "soren";
@@ -63,6 +62,7 @@ void config_write(config_t *config) {
 	trace("config write id 0x%02x%02x\n", config->id[0], config->id[1]);
 	trace("config write firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
 	trace("config write hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
+	trace("config write led debug %s\n", human_bool(config->led_debug));
 	trace("config write reading enable %s\n", human_bool(config->reading_enable));
 	trace("config write metric enable %s\n", human_bool(config->metric_enable));
 	trace("config write buffer enable %s\n", human_bool(config->buffer_enable));
@@ -85,6 +85,8 @@ void config_write(config_t *config) {
 	offset += sizeof(config->firmware);
 	memcpy(&buffer[offset], config->hardware, sizeof(config->hardware));
 	offset += sizeof(config->hardware);
+	buffer[offset] = config->led_debug;
+	offset += sizeof(config->led_debug);
 	buffer[offset] = config->reading_enable;
 	offset += sizeof(config->reading_enable);
 	buffer[offset] = config->metric_enable;
@@ -128,6 +130,8 @@ void config_read(config_t *config) {
 	offset += sizeof(config->firmware);
 	memcpy(config->hardware, &base[offset], sizeof(config->hardware));
 	offset += sizeof(config->hardware);
+	config->led_debug = base[offset];
+	offset += sizeof(config->led_debug);
 	config->reading_enable = base[offset];
 	offset += sizeof(config->reading_enable);
 	config->metric_enable = base[offset];
@@ -163,6 +167,7 @@ void config_read(config_t *config) {
 	trace("config read id 0x%02x%02x\n", config->id[0], config->id[1]);
 	trace("config read firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
 	trace("config read hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
+	trace("config read led debug %s\n", human_bool(config->led_debug));
 	trace("config read reading enable %s\n", human_bool(config->reading_enable));
 	trace("config read metric enable %s\n", human_bool(config->metric_enable));
 	trace("config read buffer enable %s\n", human_bool(config->buffer_enable));

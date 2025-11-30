@@ -75,7 +75,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 	tx("id %02x%02x kind %02x bytes %hhu sf %hhu power %hhu\n", tx_data[0], tx_data[1], tx_data[3], tx_data_len,
 		 config->spreading_factor, ((tx_data[2] >> 4) & 0x0f) + 2);
 
-	if (led_debug == true) {
+	if (config->led_debug == true) {
 		sx1278_rx(timeout);
 		rp2040_led_blink(3);
 	}
@@ -112,14 +112,15 @@ int transceive(config_t *config, uplink_t *uplink) {
 	rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu power %hhu\n", rx_data[0], rx_data[1], rx_data[3], rx_data_len,
 		 rssi, snr / 4.0f, config->spreading_factor, ((rx_data[2] >> 4) & 0x0f) + 2);
 
-	if (led_debug == true) {
+	if (config->led_debug == true) {
 		rp2040_led_blink(4);
 	}
 
 	if (rx_data[3] == 0x05 && rx_data_len == 11) {
-		bool reading_enable = (bool)(rx_data[4] & 0x80);
-		bool metric_enable = (bool)(rx_data[4] & 0x40);
-		bool buffer_enable = (bool)(rx_data[4] & 0x20);
+		bool led_debug = (bool)(rx_data[4] & 0x80);
+		bool reading_enable = (bool)(rx_data[4] & 0x40);
+		bool metric_enable = (bool)(rx_data[4] & 0x20);
+		bool buffer_enable = (bool)(rx_data[4] & 0x10);
 		uint16_t reading_interval = (uint16_t)((rx_data[5] << 8) | rx_data[6]);
 		uint16_t metric_interval = (uint16_t)((rx_data[7] << 8) | rx_data[8]);
 		uint16_t buffer_interval = (uint16_t)((rx_data[9] << 8) | rx_data[10]);
@@ -139,6 +140,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 			return 0;
 		}
 
+		config->led_debug = led_debug;
 		config->reading_enable = reading_enable;
 		config->metric_enable = metric_enable;
 		config->buffer_enable = buffer_enable;
