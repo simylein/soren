@@ -65,7 +65,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	memcpy(&tx_data[tx_data_len], config->id, sizeof(config->id));
 	tx_data_len += sizeof(config->id);
-	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0 | ((config->preamble_length - 1) & 0x0f);
+	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0 | ((config->preamble_length - 6) & 0x0f);
 	tx_data_len += sizeof(tx_data[tx_data_len]);
 	tx_data[tx_data_len] = uplink->kind;
 	tx_data_len += sizeof(uplink->kind);

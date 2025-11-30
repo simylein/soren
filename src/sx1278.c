@@ -216,8 +216,8 @@ int sx1278_tx_power(uint8_t power) {
 }
 
 int sx1278_preamble_length(uint16_t len) {
-	if (len < 1 || len > 16) {
-		error("sx1278 preamble length must be between %d and %d\n", 1, 16);
+	if (len < 6 || len > 21) {
+		error("sx1278 preamble length must be between %d and %d\n", 6, 21);
 		return -1;
 	}
 
