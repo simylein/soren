@@ -17,7 +17,7 @@ void rp2040_stdio_init(void) {
 
 	stdio_init_all();
 
-	sleep_ms(2048);
+	sleep_ms(500);
 }
 
 void rp2040_adc_init(void) {
@@ -43,17 +43,17 @@ void rp2040_led_init(void) {
 void rp2040_led_blink(uint8_t blinks) {
 	for (uint8_t ind = 0; ind < blinks; ind++) {
 		gpio_put(rp2040_pin_led, 1);
-		sleep_ms(64);
+		sleep_ms(100);
 		gpio_put(rp2040_pin_led, 0);
-		sleep_ms(64);
+		sleep_ms(100);
 	}
-	sleep_ms(256);
+	sleep_ms(200);
 }
 
 void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {
 	gpio_put(rp2040_en_photovoltaic, 1);
 
-	sleep_us(5000);
+	sleep_ms(5);
 
 	adc_select_input(rp2040_adc_photovoltaic);
 	adc_read();
@@ -72,7 +72,7 @@ float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 
 void rp2040_battery(uint16_t *battery, uint8_t samples) {
 	gpio_put(rp2040_en_battery, 1);
 
-	sleep_us(5000);
+	sleep_ms(5);
 
 	adc_select_input(rp2040_adc_battery);
 	adc_read();

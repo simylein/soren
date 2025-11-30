@@ -181,7 +181,7 @@ int main(void) {
 		}
 
 		if (do_buffer == true && buffer.size == 0) {
-			sleep_us(5000);
+			sleep_ms(5);
 			info("buffer offloaded size %hu\n", buffer.size);
 
 			uplink.kind = 0x80;
@@ -198,7 +198,7 @@ int main(void) {
 		}
 
 		if (do_buffer == true && buffer.size > 0) {
-			sleep_us(5000);
+			sleep_ms(5);
 			info("offloading buffer at size %hu\n", buffer.size);
 
 			uplink_t uplink;

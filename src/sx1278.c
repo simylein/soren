@@ -72,7 +72,7 @@ int sx1278_reset(void) {
 	gpio_set_dir(sx1278_pin_reset, GPIO_OUT);
 	gpio_put(sx1278_pin_reset, 0);
 
-	sleep_us(5000);
+	sleep_ms(5);
 	trace("sx1278 reset\n");
 
 	gpio_set_dir(sx1278_pin_reset, GPIO_IN);
