@@ -26,6 +26,11 @@ int configure(config_t *config) {
 		return -1;
 	}
 
+	if (sx1278_preamble_length(config->preamble_length) == -1) {
+		error("sx1278 failed to configure preamble length\n");
+		return -1;
+	}
+
 	if (sx1278_coding_rate(config->coding_rate) == -1) {
 		error("sx1278 failed to configure coding rate\n");
 		return -1;
@@ -60,8 +65,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	memcpy(&tx_data[tx_data_len], config->id, sizeof(config->id));
 	tx_data_len += sizeof(config->id);
-	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0;
-	tx_data_len += sizeof(config->tx_power);
+	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0 | ((config->preamble_length - 1) & 0x0f);
+	tx_data_len += sizeof(tx_data[tx_data_len]);
 	tx_data[tx_data_len] = uplink->kind;
 	tx_data_len += sizeof(uplink->kind);
 	memcpy(&tx_data[tx_data_len], uplink->data, uplink->data_len);

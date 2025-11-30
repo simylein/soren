@@ -17,7 +17,7 @@ void rp2040_stdio_init(void) {
 
 	stdio_init_all();
 
-	sleep_ms(500);
+	sleep_ms(2000);
 }
 
 void rp2040_adc_init(void) {

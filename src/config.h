@@ -19,6 +19,7 @@ typedef struct config_t {
 	uint32_t bandwidth;
 	uint8_t coding_rate;
 	uint8_t spreading_factor;
+	uint8_t preamble_length;
 	uint8_t tx_power;
 	uint8_t sync_word;
 	bool checksum;

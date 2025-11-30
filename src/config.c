@@ -73,6 +73,7 @@ void config_write(config_t *config) {
 	trace("config write bandwidth %u\n", config->bandwidth);
 	trace("config write coding rate %hhu\n", config->coding_rate);
 	trace("config write spreading factor %hhu\n", config->spreading_factor);
+	trace("config write preamble length %hhu\n", config->preamble_length);
 	trace("config write tx power %hhu\n", config->tx_power);
 	trace("config write sync word 0x%02x\n", config->sync_word);
 	trace("config write checksum %s\n", human_bool(config->checksum));
@@ -107,6 +108,8 @@ void config_write(config_t *config) {
 	offset += sizeof(config->coding_rate);
 	buffer[offset] = config->spreading_factor;
 	offset += sizeof(config->spreading_factor);
+	buffer[offset] = config->preamble_length;
+	offset += sizeof(config->preamble_length);
 	buffer[offset] = config->tx_power;
 	offset += sizeof(config->tx_power);
 	buffer[offset] = config->sync_word;
@@ -157,6 +160,8 @@ void config_read(config_t *config) {
 	offset += sizeof(config->coding_rate);
 	config->spreading_factor = base[offset];
 	offset += sizeof(config->spreading_factor);
+	config->preamble_length = base[offset];
+	offset += sizeof(config->preamble_length);
 	config->tx_power = base[offset];
 	offset += sizeof(config->tx_power);
 	config->sync_word = base[offset];
@@ -178,6 +183,7 @@ void config_read(config_t *config) {
 	trace("config read bandwidth %u\n", config->bandwidth);
 	trace("config read coding rate %hhu\n", config->coding_rate);
 	trace("config read spreading factor %hhu\n", config->spreading_factor);
+	trace("config read preamble length %hhu\n", config->preamble_length);
 	trace("config read tx power %hhu\n", config->tx_power);
 	trace("config read sync word 0x%02x\n", config->sync_word);
 	trace("config read checksum %s\n", human_bool(config->checksum));
