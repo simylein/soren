@@ -153,16 +153,18 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config->metric_interval = metric_interval;
 		config->buffer_interval = buffer_interval;
 		config_write(config);
+		config_read(config);
 	}
 
-	if (rx_data[3] == 0x06 && rx_data_len == 16) {
+	if (rx_data[3] == 0x06 && rx_data_len == 17) {
 		uint32_t frequency = (uint32_t)((rx_data[4] << 24) | (rx_data[5] << 16) | (rx_data[6] << 8) | rx_data[7]);
 		uint32_t bandwidth = (uint32_t)((rx_data[8] << 16) | (rx_data[9] << 8) | rx_data[10]);
 		uint8_t coding_rate = rx_data[11];
 		uint8_t spreading_factor = rx_data[12];
-		uint8_t tx_power = rx_data[13];
-		uint8_t sync_word = rx_data[14];
-		bool checksum = (bool)rx_data[15];
+		uint8_t preamble_length = rx_data[13];
+		uint8_t tx_power = rx_data[14];
+		uint8_t sync_word = rx_data[15];
+		bool checksum = (bool)rx_data[16];
 
 		if (frequency < 400 * 1000 * 1000 || frequency > 500 * 1000 * 1000) {
 			warn("invalid frequency %u\n", frequency);
@@ -184,6 +186,11 @@ int transceive(config_t *config, uplink_t *uplink) {
 			return -1;
 		}
 
+		if (preamble_length < 6 || preamble_length > 21) {
+			warn("invalid preamble length %hhu\n", preamble_length);
+			return -1;
+		}
+
 		if (tx_power < 2 || tx_power > 17) {
 			warn("invalid tx power %hhu\n", tx_power);
 			return -1;
@@ -193,10 +200,12 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config->bandwidth = bandwidth;
 		config->coding_rate = coding_rate;
 		config->spreading_factor = spreading_factor;
+		config->preamble_length = preamble_length;
 		config->tx_power = tx_power;
 		config->sync_word = sync_word;
 		config->checksum = checksum;
 		config_write(config);
+		config_read(config);
 		configure(config);
 	}
 
