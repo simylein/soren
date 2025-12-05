@@ -77,10 +77,10 @@ int main(void) {
 	if (transceive(&config, &uplink) == -1) {
 		buffer_push(&uplink);
 		info("buffered uplink at size %hu\n", buffer.size);
-		sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
 	}
 
 	bool acknowledged = false;
+	uint16_t jitter = 0;
 
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
@@ -174,10 +174,11 @@ int main(void) {
 				info("buffered uplink at size %hu\n", buffer.size);
 				next_buffer = config.buffer_interval;
 				acknowledged = false;
-				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
+				jitter = rand() % (int)pow(2, config.spreading_factor - 4);
 				goto sleep;
 			}
 			acknowledged = true;
+			jitter = 0;
 		}
 
 		if (do_buffer == true && buffer.size == 0) {
@@ -190,7 +191,7 @@ int main(void) {
 
 			if (transceive(&config, &uplink) == -1) {
 				acknowledged = false;
-				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
+				jitter = rand() % (int)pow(2, config.spreading_factor - 4);
 				goto sleep;
 			}
 
@@ -233,7 +234,7 @@ int main(void) {
 
 			if (transceive(&config, &uplink) == -1) {
 				acknowledged = false;
-				sleep_ms(rand() % (int)pow(2, config.spreading_factor - 4));
+				jitter = rand() % (int)pow(2, config.spreading_factor - 4);
 				goto sleep;
 			}
 
@@ -268,10 +269,10 @@ int main(void) {
 		trace("next reading in %hu seconds\n", next_reading);
 		trace("next metric in %hu seconds\n", next_metric);
 		trace("next buffer in %hu seconds\n", next_buffer);
-		debug("sleeping for %hu seconds\n", interval);
+		debug("sleeping for %hu seconds and %hu milliseconds\n", interval, jitter);
 
 		if (deep_sleep == false) {
-			sleep_ms(interval * 1000);
+			sleep_ms(interval * 1000 + jitter);
 		} else {
 			if (pcf8563_alarm(interval) == -1) {
 				error("pcf8563 failed to write alarm\n");
