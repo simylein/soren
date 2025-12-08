@@ -24,6 +24,7 @@ void rp2040_adc_init(void) {
 	trace("rp2040 init gpio %d and %d\n", rp2040_pin_photovoltaic, rp2040_pin_battery);
 
 	adc_init();
+	adc_set_clkdiv(128);
 
 	adc_gpio_init(rp2040_pin_photovoltaic);
 	adc_gpio_init(rp2040_pin_battery);
