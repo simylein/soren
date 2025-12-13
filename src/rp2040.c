@@ -68,7 +68,7 @@ void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {
 	gpio_put(rp2040_en_photovoltaic, 0);
 }
 
-float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3f) / 4095.0f * 2; }
+float rp2040_photovoltaic_human(uint16_t photovoltaic) { return (photovoltaic * 3.3f) / 4095.0f; }
 
 void rp2040_battery(uint16_t *battery, uint8_t samples) {
 	gpio_put(rp2040_en_battery, 1);
@@ -87,4 +87,4 @@ void rp2040_battery(uint16_t *battery, uint8_t samples) {
 	gpio_put(rp2040_en_battery, 0);
 }
 
-float rp2040_battery_human(uint16_t battery) { return (battery * 3.3f) / 4095.0f * 2; }
+float rp2040_battery_human(uint16_t battery) { return (battery * 3.3f) / 4095.0f; }
