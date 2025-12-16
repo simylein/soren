@@ -57,6 +57,10 @@ int main(void) {
 		rp2040_led_blink(8);
 	}
 
+	if (sx1278_standby(timeout) == -1) {
+		error("sx1278 failed to enter standby\n");
+	}
+
 	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
 	transceive_version(&config);
 	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
@@ -64,6 +68,14 @@ int main(void) {
 	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
 	transceive_radio(&config);
 	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
+
+	if (sx1278_standby(timeout) == -1) {
+		error("sx1278 failed to enter standby\n");
+	}
+
+	if (sx1278_sleep(timeout) == -1) {
+		error("sx1278 failed to enter sleep\n");
+	}
 
 	bool acknowledged = false;
 	uint16_t jitter = 0;
