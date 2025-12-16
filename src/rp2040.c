@@ -1,6 +1,7 @@
 #include "config.h"
 #include "hardware/clocks.h"
 #include "logger.h"
+#include "sleep.h"
 #include <hardware/adc.h>
 #include <hardware/rtc.h>
 #include <pico/stdlib.h>
@@ -44,11 +45,11 @@ void rp2040_led_init(void) {
 void rp2040_led_blink(uint8_t blinks) {
 	for (uint8_t ind = 0; ind < blinks; ind++) {
 		gpio_put(rp2040_pin_led, 1);
-		sleep_ms(100);
+		sleep(100);
 		gpio_put(rp2040_pin_led, 0);
-		sleep_ms(100);
+		sleep(100);
 	}
-	sleep_ms(200);
+	sleep(200);
 }
 
 void rp2040_photovoltaic(uint16_t *photovoltaic, uint8_t samples) {

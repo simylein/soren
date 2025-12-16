@@ -7,6 +7,7 @@
 #include "pcf8563.h"
 #include "rp2040.h"
 #include "si7021.h"
+#include "sleep.h"
 #include "sx1278.h"
 #include <math.h>
 #include <pico/sleep.h>
@@ -271,26 +272,8 @@ int main(void) {
 		trace("next buffer in %hu seconds\n", next_buffer);
 		debug("sleeping for %hu seconds and %hu milliseconds\n", interval, jitter);
 
-		if (deep_sleep == false) {
-			sleep_ms(interval * 1000 + jitter);
-		} else {
-			if (pcf8563_alarm(interval) == -1) {
-				error("pcf8563 failed to write alarm\n");
-			}
-
-			sleep_run_from_xosc();
-			sleep_goto_dormant_until_pin(pcf8563_pin_int, true, false);
-			sleep_power_up();
-
-			pcf8563_init();
-			si7021_init();
-			sx1278_init();
-			rp2040_adc_init();
-
-			if (pcf8563_alarm_clear() == -1) {
-				error("pcf8563 failed to clear alarm\n");
-			}
-		}
+		uint32_t duration = interval * 1000 + jitter;
+		sleep(duration);
 
 		debug("woke up from sleep\n");
 		next_reading = sub16(next_reading, interval);

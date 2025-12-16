@@ -72,17 +72,17 @@ int pcf8563_datetime(datetime_t *datetime) {
 	return 0;
 }
 
-int pcf8563_alarm(uint8_t seconds) {
-	uint8_t timer_ctrl = 0x02;
+int pcf8563_alarm(uint8_t ticks) {
+	uint8_t timer_ctrl = 0x01;
 	if (pcf8563_write_register(0x0e, &timer_ctrl, sizeof(timer_ctrl)) == -1) {
 		return -1;
 	}
 	trace("pcf8563 write data 0x%02x\n", timer_ctrl);
 
-	if (pcf8563_write_register(0x0f, &seconds, sizeof(seconds)) == -1) {
+	if (pcf8563_write_register(0x0f, &ticks, sizeof(ticks)) == -1) {
 		return -1;
 	}
-	trace("pcf8563 write data 0x%02x\n", seconds);
+	trace("pcf8563 write data 0x%02x\n", ticks);
 
 	uint8_t cs2;
 	if (pcf8563_read_register(0x01, &cs2, sizeof(cs2)) == -1) {
