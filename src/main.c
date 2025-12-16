@@ -261,9 +261,9 @@ int main(void) {
 			next_buffer = config.buffer_interval;
 		}
 
-		interval = min(next_reading, next_metric);
+		interval = min16(next_reading, next_metric);
 		if (acknowledged == true) {
-			interval = min(interval, next_buffer);
+			interval = min16(interval, next_buffer);
 		}
 
 		trace("next reading in %hu seconds\n", next_reading);
@@ -293,8 +293,8 @@ int main(void) {
 		}
 
 		debug("woke up from sleep\n");
-		next_reading = sub(next_reading, interval);
-		next_metric = sub(next_metric, interval);
-		next_buffer = sub(next_buffer, interval);
+		next_reading = sub16(next_reading, interval);
+		next_metric = sub16(next_metric, interval);
+		next_buffer = sub16(next_buffer, interval);
 	}
 }
