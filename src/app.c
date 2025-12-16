@@ -1,10 +1,14 @@
 #include "app.h"
+#include "buffer.h"
 #include "config.h"
 #include "endian.h"
 #include "logger.h"
+#include "pcf8563.h"
 #include "rp2040.h"
 #include "sx1278.h"
 #include <math.h>
+#include <pico/sleep.h>
+#include <pico/stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -121,6 +125,10 @@ int transceive(config_t *config, uplink_t *uplink) {
 		rp2040_led_blink(4);
 	}
 
+	if (rx_data[3] == 0x05 && rx_data_len == 4) {
+		transceive_config(config);
+	}
+
 	if (rx_data[3] == 0x05 && rx_data_len == 11) {
 		bool led_debug = (bool)(rx_data[4] & 0x80);
 		bool reading_enable = (bool)(rx_data[4] & 0x40);
@@ -154,6 +162,10 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config->buffer_interval = buffer_interval;
 		config_write(config);
 		config_read(config);
+	}
+
+	if (rx_data[3] == 0x06 && rx_data_len == 4) {
+		transceive_radio(config);
 	}
 
 	if (rx_data[3] == 0x06 && rx_data_len == 17) {
@@ -207,6 +219,114 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config_write(config);
 		config_read(config);
 		configure(config);
+	}
+
+	return 0;
+}
+
+int transceive_version(config_t *config) {
+	datetime_t datetime;
+	if (pcf8563_datetime(&datetime) == -1) {
+		error("pcf8563 failed to read datetime\n");
+		return -1;
+	}
+
+	time_t captured_at;
+	if (datetime_to_time(&datetime, &captured_at) == false) {
+		error("failed to convert datetime\n");
+		return -1;
+	}
+
+	uplink_t uplink = {.kind = 0x04, .data_len = 0, .captured_at = captured_at};
+	memcpy(&uplink.data[uplink.data_len], config->firmware, sizeof(config->firmware));
+	uplink.data_len += sizeof(config->firmware);
+	memcpy(&uplink.data[uplink.data_len], config->hardware, sizeof(config->hardware));
+	uplink.data_len += sizeof(config->hardware);
+
+	if (transceive(config, &uplink) == -1) {
+		buffer_push(&uplink);
+		info("buffered uplink at size %hu\n", buffer.size);
+		return -1;
+	}
+
+	return 0;
+}
+
+int transceive_config(config_t *config) {
+	datetime_t datetime;
+	if (pcf8563_datetime(&datetime) == -1) {
+		error("pcf8563 failed to read datetime\n");
+		return -1;
+	}
+
+	time_t captured_at;
+	if (datetime_to_time(&datetime, &captured_at) == false) {
+		error("failed to convert datetime\n");
+		return -1;
+	}
+
+	uplink_t uplink = {.kind = 0x05, .data_len = 0, .captured_at = captured_at};
+	uplink.data[uplink.data_len] = 0x00;
+	uplink.data[uplink.data_len] |= config->led_debug << 7;
+	uplink.data[uplink.data_len] |= config->reading_enable << 6;
+	uplink.data[uplink.data_len] |= config->metric_enable << 5;
+	uplink.data[uplink.data_len] |= config->buffer_enable << 4;
+	uplink.data_len += sizeof(uint8_t);
+	memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(config->reading_interval)}, sizeof(config->reading_interval));
+	uplink.data_len += sizeof(config->reading_interval);
+	memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(config->metric_interval)}, sizeof(config->metric_interval));
+	uplink.data_len += sizeof(config->metric_interval);
+	memcpy(&uplink.data[uplink.data_len], (uint16_t[]){hton16(config->buffer_interval)}, sizeof(config->buffer_interval));
+	uplink.data_len += sizeof(config->buffer_interval);
+
+	if (transceive(config, &uplink) == -1) {
+		buffer_push(&uplink);
+		info("buffered uplink at size %hu\n", buffer.size);
+		return -1;
+	}
+
+	return 0;
+}
+
+int transceive_radio(config_t *config) {
+	datetime_t datetime;
+	if (pcf8563_datetime(&datetime) == -1) {
+		error("pcf8563 failed to read datetime\n");
+		return -1;
+	}
+
+	time_t captured_at;
+	if (datetime_to_time(&datetime, &captured_at) == false) {
+		error("failed to convert datetime\n");
+		return -1;
+	}
+
+	uplink_t uplink = {.kind = 0x06, .data_len = 0, .captured_at = captured_at};
+	memcpy(&uplink.data[uplink.data_len], (uint32_t[]){hton32(config->frequency)}, sizeof(config->frequency));
+	uplink.data_len += sizeof(config->frequency);
+	uplink.data[uplink.data_len] = (config->bandwidth >> 16) & 0xff;
+	uplink.data_len += sizeof(uint8_t);
+	uplink.data[uplink.data_len] = (config->bandwidth >> 8) & 0xff;
+	uplink.data_len += sizeof(uint8_t);
+	uplink.data[uplink.data_len] = config->bandwidth & 0xff;
+	uplink.data_len += sizeof(uint8_t);
+	uplink.data[uplink.data_len] = config->coding_rate;
+	uplink.data_len += sizeof(config->coding_rate);
+	uplink.data[uplink.data_len] = config->spreading_factor;
+	uplink.data_len += sizeof(config->spreading_factor);
+	uplink.data[uplink.data_len] = config->preamble_length;
+	uplink.data_len += sizeof(config->preamble_length);
+	uplink.data[uplink.data_len] = config->tx_power;
+	uplink.data_len += sizeof(config->tx_power);
+	uplink.data[uplink.data_len] = config->sync_word;
+	uplink.data_len += sizeof(config->sync_word);
+	uplink.data[uplink.data_len] = config->checksum;
+	uplink.data_len += sizeof(config->checksum);
+
+	if (transceive(config, &uplink) == -1) {
+		buffer_push(&uplink);
+		info("buffered uplink at size %hu\n", buffer.size);
+		return -1;
 	}
 
 	return 0;

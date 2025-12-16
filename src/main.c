@@ -57,28 +57,13 @@ int main(void) {
 		rp2040_led_blink(8);
 	}
 
-	datetime_t datetime;
-	if (pcf8563_datetime(&datetime) == -1) {
-		error("pcf8563 failed to read datetime\n");
-		goto sleep;
-	}
-
-	time_t captured_at;
-	if (datetime_to_time(&datetime, &captured_at) == false) {
-		error("failed to convert datetime\n");
-		goto sleep;
-	}
-
-	uplink_t uplink = {.kind = 0x04, .data_len = 0, .captured_at = captured_at};
-	memcpy(&uplink.data[uplink.data_len], config.firmware, sizeof(config.firmware));
-	uplink.data_len += sizeof(config.firmware);
-	memcpy(&uplink.data[uplink.data_len], config.hardware, sizeof(config.hardware));
-	uplink.data_len += sizeof(config.hardware);
-
-	if (transceive(&config, &uplink) == -1) {
-		buffer_push(&uplink);
-		info("buffered uplink at size %hu\n", buffer.size);
-	}
+	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
+	transceive_version(&config);
+	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
+	transceive_config(&config);
+	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
+	transceive_radio(&config);
+	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
 
 	bool acknowledged = false;
 	uint16_t jitter = 0;
