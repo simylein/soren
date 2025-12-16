@@ -125,6 +125,10 @@ int transceive(config_t *config, uplink_t *uplink) {
 		rp2040_led_blink(4);
 	}
 
+	if (rx_data[3] == 0x04 && rx_data_len == 4) {
+		transceive_version(config);
+	}
+
 	if (rx_data[3] == 0x05 && rx_data_len == 4) {
 		transceive_config(config);
 	}
