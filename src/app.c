@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "pcf8563.h"
 #include "rp2040.h"
+#include "sleep.h"
 #include "sx1278.h"
 #include <math.h>
 #include <pico/sleep.h>
@@ -126,10 +127,12 @@ int transceive(config_t *config, uplink_t *uplink) {
 	}
 
 	if (rx_data[3] == 0x04 && rx_data_len == 4) {
+		sleep(5);
 		transceive_version(config);
 	}
 
 	if (rx_data[3] == 0x05 && rx_data_len == 4) {
+		sleep(5);
 		transceive_config(config);
 	}
 
@@ -169,6 +172,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 	}
 
 	if (rx_data[3] == 0x06 && rx_data_len == 4) {
+		sleep(5);
 		transceive_radio(config);
 	}
 
