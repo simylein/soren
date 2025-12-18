@@ -82,7 +82,7 @@ int main(void) {
 
 	uint16_t next_reading = 0;
 	uint16_t next_metric = 0;
-	uint16_t next_buffer = 3600;
+	uint16_t next_buffer = 0;
 
 	while (true) {
 		if (config.led_debug == true) {
@@ -193,7 +193,7 @@ int main(void) {
 				goto sleep;
 			}
 
-			next_buffer = 3600;
+			next_buffer = 1200;
 		}
 
 		if (do_buffer == true && buffer.size > 0) {
@@ -267,9 +267,14 @@ int main(void) {
 		trace("next reading in %hu seconds\n", next_reading);
 		trace("next metric in %hu seconds\n", next_metric);
 		trace("next buffer in %hu seconds\n", next_buffer);
-		debug("sleeping for %hu seconds and %hu milliseconds\n", interval, jitter);
+		debug("sleeping for %hu seconds and %hu jitter\n", interval, jitter);
 
-		uint32_t duration = interval * 1000 + jitter;
+		uint32_t duration = interval * 1000;
+		if (rand() % 2 == 0) {
+			duration += jitter;
+		} else {
+			duration -= jitter;
+		}
 		sleep(duration);
 
 		debug("woke up from sleep\n");
