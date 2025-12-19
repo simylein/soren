@@ -26,11 +26,14 @@ int main(void) {
 		rp2040_stdio_init();
 	}
 
+	rp2040_led_init();
+
 	config_t config;
 	config_read(&config);
 	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware)) != 0) {
 		memcpy(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware));
 		config_write(&config);
+		rp2040_led_blink(12);
 	}
 
 	srand((config.id[0] << 8) | config.id[1]);
@@ -41,7 +44,6 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
-	rp2040_led_init();
 
 	sx1278_reset();
 
