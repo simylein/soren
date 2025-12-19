@@ -14,7 +14,10 @@ void sleep(uint32_t duration) {
 	} else {
 		while (duration > 0) {
 			uint32_t milliseconds = min32(duration, 3984);
-			uint8_t ticks = (milliseconds * 64 + 999) / 1000;
+			uint8_t ticks = (milliseconds * 64 + 500) / 1000;
+			if (ticks < 2) {
+				ticks = 2;
+			}
 
 			if (pcf8563_alarm(ticks) == -1) {
 				error("pcf8563 failed to write alarm\n");

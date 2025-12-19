@@ -127,12 +127,12 @@ int transceive(config_t *config, uplink_t *uplink) {
 	}
 
 	if (rx_data[3] == 0x04 && rx_data_len == 4) {
-		sleep(5);
+		sleep(20);
 		transceive_version(config);
 	}
 
 	if (rx_data[3] == 0x05 && rx_data_len == 4) {
-		sleep(5);
+		sleep(20);
 		transceive_config(config);
 	}
 
@@ -172,7 +172,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 	}
 
 	if (rx_data[3] == 0x06 && rx_data_len == 4) {
-		sleep(5);
+		sleep(20);
 		transceive_radio(config);
 	}
 
