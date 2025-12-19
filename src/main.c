@@ -37,9 +37,7 @@ int main(void) {
 	si7021_init();
 	sx1278_init();
 	rp2040_adc_init();
-	if (config.led_debug == true) {
-		rp2040_led_init();
-	}
+	rp2040_led_init();
 
 	sx1278_reset();
 

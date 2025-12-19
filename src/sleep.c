@@ -39,5 +39,6 @@ void sleep(uint32_t duration) {
 		si7021_init();
 		sx1278_init();
 		rp2040_adc_init();
+		rp2040_led_init();
 	}
 }
