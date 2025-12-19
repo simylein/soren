@@ -28,6 +28,10 @@ int main(void) {
 
 	config_t config;
 	config_read(&config);
+	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware)) != 0) {
+		memcpy(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware));
+		config_write(&config);
+	}
 
 	srand((config.id[0] << 8) | config.id[1]);
 
