@@ -26,6 +26,10 @@ int main(void) {
 		rp2040_stdio_init();
 	}
 
+	pcf8563_init();
+	si7021_init();
+	sx1278_init();
+	rp2040_adc_init();
 	rp2040_led_init();
 
 	config_t config;
@@ -39,11 +43,6 @@ int main(void) {
 	srand((config.id[0] << 8) | config.id[1]);
 
 	info("starting soren sensor firmware\n");
-
-	pcf8563_init();
-	si7021_init();
-	sx1278_init();
-	rp2040_adc_init();
 
 	sx1278_reset();
 
