@@ -34,8 +34,8 @@ int main(void) {
 
 	config_t config;
 	config_read(&config);
-	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware)) != 0) {
-		memcpy(config.firmware, (uint8_t[]){0x02, 0x67}, sizeof(config.firmware));
+	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x60}, sizeof(config.firmware)) != 0) {
+		memcpy(config.firmware, (uint8_t[]){0x02, 0x60}, sizeof(config.firmware));
 		config_write(&config);
 		rp2040_led_blink(12);
 	}
