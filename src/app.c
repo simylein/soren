@@ -65,6 +65,26 @@ int configure(config_t *config) {
 }
 
 int transceive(config_t *config, uplink_t *uplink) {
+	if (sx1278_standby(timeout) == -1) {
+		error("sx1278 failed to enter standby\n");
+		return -1;
+	}
+
+	while (true) {
+		int result = sx1278_listen((int)pow(2, config->spreading_factor - 4));
+		if (result == -1) {
+			error("sx1278 failed to listen for packets\n");
+			return -1;
+		}
+
+		if (result == 1) {
+			warn("sx1278 channel busy waiting for window\n");
+			sleep((int)pow(2, config->spreading_factor - 4));
+		} else {
+			break;
+		}
+	}
+
 	uint8_t tx_data[256];
 	uint8_t tx_data_len = 0;
 

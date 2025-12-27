@@ -165,6 +165,27 @@ int sx1278_rx(uint32_t timeout_ms) {
 	return -1;
 }
 
+int sx1278_cad(uint32_t timeout_ms) {
+	if (sx1278_write_register(reg_op_mode, 0x87) == -1) {
+		return -1;
+	}
+
+	absolute_time_t deadline = make_timeout_time_ms(timeout_ms);
+	while (!time_reached(deadline)) {
+		uint8_t op_mode;
+		if (sx1278_read_register(reg_op_mode, &op_mode) == -1) {
+			return -1;
+		}
+		if ((op_mode & 0x07) == 0x07) {
+			trace("sx1278 cad op_mode 0x%02x\n", op_mode);
+			return 0;
+		}
+		sleep_us(500);
+	}
+
+	return -1;
+}
+
 int sx1278_frequency(uint32_t frequency) {
 	uint32_t frf = (uint32_t)(frequency * (1ull << 19) / (32 * 1000 * 1000));
 
@@ -528,4 +549,44 @@ int sx1278_receive(uint8_t (*data)[256], uint8_t *length, uint32_t timeout_ms) {
 
 	trace("sx1278 acknowledged irq_flags 0x%02x\n", irq_flags);
 	return 0;
+}
+
+int sx1278_listen(uint32_t timeout_ms) {
+	if (sx1278_cad(timeout) == -1) {
+		return -1;
+	}
+
+	uint8_t irq_flags;
+	absolute_time_t deadline = make_timeout_time_ms(timeout_ms);
+	while (!time_reached(deadline)) {
+		if (sx1278_read_register(reg_irq_flags, &irq_flags) == -1) {
+			return -1;
+		};
+		if (irq_flags & 0x04) {
+			trace("sx1278 listening completed irq_flags 0x%02x\n", irq_flags);
+			break;
+		}
+		sleep_us(500);
+	}
+	if (!(irq_flags & 0x04)) {
+		return -1;
+	}
+
+	int status;
+	if (irq_flags & 0x01) {
+		status = 1;
+	} else {
+		status = 0;
+	}
+
+	if (sx1278_write_register(reg_irq_flags, 0xff) == -1) {
+		return -1;
+	}
+
+	if (sx1278_read_register(reg_irq_flags, &irq_flags) == -1) {
+		return -1;
+	};
+
+	trace("sx1278 acknowledged irq_flags 0x%02x\n", irq_flags);
+	return status;
 }
