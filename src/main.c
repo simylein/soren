@@ -34,8 +34,8 @@ int main(void) {
 
 	config_t config;
 	config_read(&config);
-	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x71}, sizeof(config.firmware)) != 0) {
-		memcpy(config.firmware, (uint8_t[]){0x02, 0x71}, sizeof(config.firmware));
+	if (memcmp(config.firmware, (uint8_t[]){0x02, 0x72}, sizeof(config.firmware)) != 0) {
+		memcpy(config.firmware, (uint8_t[]){0x02, 0x72}, sizeof(config.firmware));
 		config_write(&config);
 		rp2040_led_blink(12);
 	}
@@ -58,10 +58,6 @@ int main(void) {
 
 	if (config.led_debug == true) {
 		rp2040_led_blink(8);
-	}
-
-	if (sx1278_standby(timeout) == -1) {
-		error("sx1278 failed to enter standby\n");
 	}
 
 	sleep(2000 + rand() % (int)pow(2, config.spreading_factor - 4));
@@ -163,10 +159,6 @@ int main(void) {
 
 		if (config.led_debug == true) {
 			rp2040_led_blink(2);
-		}
-
-		if (sx1278_standby(timeout) == -1) {
-			error("sx1278 failed to enter standby\n");
 		}
 
 		if (uplink.kind != 0x00) {
