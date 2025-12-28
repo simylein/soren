@@ -145,7 +145,7 @@ int sx1278_tx(uint32_t timeout_ms) {
 }
 
 int sx1278_rx(uint32_t timeout_ms) {
-	if (sx1278_write_register(reg_op_mode, 0x85) == -1) {
+	if (sx1278_write_register(reg_op_mode, 0x86) == -1) {
 		return -1;
 	}
 
@@ -155,7 +155,7 @@ int sx1278_rx(uint32_t timeout_ms) {
 		if (sx1278_read_register(reg_op_mode, &op_mode) == -1) {
 			return -1;
 		}
-		if ((op_mode & 0x07) == 0x05) {
+		if ((op_mode & 0x07) == 0x06) {
 			trace("sx1278 receive op_mode 0x%02x\n", op_mode);
 			return 0;
 		}
