@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 typedef struct buffer_t {
-	uplink_t uplinks[4096];
+	uplink_t uplinks[6144];
 	uint16_t head;
 	uint16_t tail;
 	uint16_t size;
