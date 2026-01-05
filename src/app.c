@@ -90,6 +90,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 
 	memcpy(&tx_data[tx_data_len], config->id, sizeof(config->id));
 	tx_data_len += sizeof(config->id);
+	memcpy(&tx_data[tx_data_len], (uint16_t[]){hton16(config->frame)}, sizeof(config->frame));
+	tx_data_len += sizeof(config->frame);
 	tx_data[tx_data_len] = ((config->tx_power - 2) << 4) & 0xf0 | ((config->preamble_length - 6) & 0x0f);
 	tx_data_len += sizeof(tx_data[tx_data_len]);
 	tx_data[tx_data_len] = uplink->kind;
@@ -102,13 +104,16 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	tx("id %02x%02x kind %02x bytes %hhu sf %hhu power %hhu\n", tx_data[0], tx_data[1], tx_data[3], tx_data_len,
-		 config->spreading_factor, ((tx_data[2] >> 4) & 0x0f) + 2);
+	tx("id %02x%02x frame %hu kind %02x bytes %hhu sf %hhu power %hhu\n", tx_data[0], tx_data[1],
+		 (uint16_t)(tx_data[2] << 8) | (uint16_t)tx_data[3], tx_data[5], tx_data_len, config->spreading_factor,
+		 ((tx_data[4] >> 4) & 0x0f) + 2);
 
 	if (config->led_debug == true) {
 		sx1278_rx(timeout);
 		rp2040_led_blink(3);
 	}
+
+	config->frame += 1;
 
 	uint8_t rx_data[256];
 	uint8_t rx_data_len = 0;
@@ -117,7 +122,7 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	if (rx_data_len < 4) {
+	if (rx_data_len < 6) {
 		debug("sx1278 received packet without headers\n");
 		return -1;
 	}
@@ -139,24 +144,25 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
-	rx("id %02x%02x kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu power %hhu\n", rx_data[0], rx_data[1], rx_data[3], rx_data_len,
-		 rssi, snr / 4.0f, config->spreading_factor, ((rx_data[2] >> 4) & 0x0f) + 2);
+	rx("id %02x%02x frame %hu kind %02x bytes %hhu rssi %hd snr %.2f sf %hhu power %hhu\n", rx_data[0], rx_data[1],
+		 (uint16_t)(rx_data[2] << 8) | (uint16_t)rx_data[3], rx_data[5], rx_data_len, rssi, snr / 4.0f, config->spreading_factor,
+		 ((rx_data[4] >> 4) & 0x0f) + 2);
 
 	if (config->led_debug == true) {
 		rp2040_led_blink(4);
 	}
 
-	if (rx_data[3] == 0x04 && rx_data_len == 4) {
+	if (rx_data[5] == 0x04 && rx_data_len == 4) {
 		sleep(20);
 		transceive_version(config);
 	}
 
-	if (rx_data[3] == 0x05 && rx_data_len == 4) {
+	if (rx_data[5] == 0x05 && rx_data_len == 4) {
 		sleep(20);
 		transceive_config(config);
 	}
 
-	if (rx_data[3] == 0x05 && rx_data_len == 11) {
+	if (rx_data[5] == 0x05 && rx_data_len == 11) {
 		bool led_debug = (bool)(rx_data[4] & 0x80);
 		bool reading_enable = (bool)(rx_data[4] & 0x40);
 		bool metric_enable = (bool)(rx_data[4] & 0x20);
@@ -191,12 +197,12 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config_read(config);
 	}
 
-	if (rx_data[3] == 0x06 && rx_data_len == 4) {
+	if (rx_data[5] == 0x06 && rx_data_len == 4) {
 		sleep(20);
 		transceive_radio(config);
 	}
 
-	if (rx_data[3] == 0x06 && rx_data_len == 17) {
+	if (rx_data[5] == 0x06 && rx_data_len == 17) {
 		uint32_t frequency = (uint32_t)((rx_data[4] << 24) | (rx_data[5] << 16) | (rx_data[6] << 8) | rx_data[7]);
 		uint32_t bandwidth = (uint32_t)((rx_data[8] << 16) | (rx_data[9] << 8) | rx_data[10]);
 		uint8_t coding_rate = rx_data[11];
