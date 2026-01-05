@@ -58,6 +58,7 @@ const uint sx1278_pin_reset = 20;
 
 void config_write(config_t *config) {
 	trace("config write id 0x%02x%02x\n", config->id[0], config->id[1]);
+	trace("config write key 0x%02x%02x%02x%02x\n", config->key[0], config->key[1], config->key[2], config->key[3]);
 	trace("config write firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
 	trace("config write hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
 	trace("config write led debug %s\n", human_bool(config->led_debug));
@@ -80,6 +81,8 @@ void config_write(config_t *config) {
 	uint8_t buffer[256];
 	memcpy(&buffer[offset], config->id, sizeof(config->id));
 	offset += sizeof(config->id);
+	memcpy(&buffer[offset], config->key, sizeof(config->key));
+	offset += sizeof(config->key);
 	memcpy(&buffer[offset], config->firmware, sizeof(config->firmware));
 	offset += sizeof(config->firmware);
 	memcpy(&buffer[offset], config->hardware, sizeof(config->hardware));
@@ -127,6 +130,8 @@ void config_read(config_t *config) {
 	size_t offset = 0;
 	memcpy(config->id, &base[offset], sizeof(config->id));
 	offset += sizeof(config->id);
+	memcpy(config->key, &base[offset], sizeof(config->key));
+	offset += sizeof(config->key);
 	memcpy(config->firmware, &base[offset], sizeof(config->firmware));
 	offset += sizeof(config->firmware);
 	memcpy(config->hardware, &base[offset], sizeof(config->hardware));
@@ -168,6 +173,7 @@ void config_read(config_t *config) {
 	offset += sizeof(config->checksum);
 
 	trace("config read id 0x%02x%02x\n", config->id[0], config->id[1]);
+	trace("config read key 0x%02x%02x%02x%02x\n", config->key[0], config->key[1], config->key[2], config->key[3]);
 	trace("config read firmware 0x%02x%02x\n", config->firmware[0], config->firmware[1]);
 	trace("config read hardware 0x%02x%02x\n", config->hardware[0], config->hardware[1]);
 	trace("config read led debug %s\n", human_bool(config->led_debug));

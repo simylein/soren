@@ -6,6 +6,7 @@
 
 typedef struct config_t {
 	uint8_t id[2];
+	uint8_t key[16];
 	uint16_t frame;
 	uint8_t firmware[2];
 	uint8_t hardware[2];

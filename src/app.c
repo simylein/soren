@@ -6,6 +6,7 @@
 #include "pcf8563.h"
 #include "rp2040.h"
 #include "sleep.h"
+#include "ssc128.h"
 #include "sx1278.h"
 #include <math.h>
 #include <pico/sleep.h>
@@ -99,6 +100,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 	memcpy(&tx_data[tx_data_len], uplink->data, uplink->data_len);
 	tx_data_len += uplink->data_len;
 
+	ssc128_encrypt(&tx_data[6], tx_data_len - 6, (uint16_t)(tx_data[2] << 8) | (uint16_t)tx_data[3], &config->key);
+
 	if (sx1278_transmit(&tx_data, tx_data_len, (uint32_t)pow(2, config->spreading_factor - 4) * 16 + 16) == -1) {
 		error("sx1278 failed to transmit packet\n");
 		return -1;
@@ -132,6 +135,8 @@ int transceive(config_t *config, uplink_t *uplink) {
 		return -1;
 	}
 
+	ssc128_decrypt(&rx_data[6], rx_data_len - 6, (uint16_t)(rx_data[2] << 8) | (uint16_t)rx_data[3], &config->key);
+
 	int16_t rssi;
 	if (sx1278_rssi(&rssi) == -1) {
 		error("sx1278 failed to read packet rssi\n");
@@ -152,24 +157,24 @@ int transceive(config_t *config, uplink_t *uplink) {
 		rp2040_led_blink(4);
 	}
 
-	if (rx_data[5] == 0x04 && rx_data_len == 4) {
+	if (rx_data[5] == 0x04 && rx_data_len == 6) {
 		sleep(20);
 		transceive_version(config);
 	}
 
-	if (rx_data[5] == 0x05 && rx_data_len == 4) {
+	if (rx_data[5] == 0x05 && rx_data_len == 6) {
 		sleep(20);
 		transceive_config(config);
 	}
 
-	if (rx_data[5] == 0x05 && rx_data_len == 11) {
-		bool led_debug = (bool)(rx_data[4] & 0x80);
-		bool reading_enable = (bool)(rx_data[4] & 0x40);
-		bool metric_enable = (bool)(rx_data[4] & 0x20);
-		bool buffer_enable = (bool)(rx_data[4] & 0x10);
-		uint16_t reading_interval = (uint16_t)((rx_data[5] << 8) | rx_data[6]);
-		uint16_t metric_interval = (uint16_t)((rx_data[7] << 8) | rx_data[8]);
-		uint16_t buffer_interval = (uint16_t)((rx_data[9] << 8) | rx_data[10]);
+	if (rx_data[5] == 0x05 && rx_data_len == 13) {
+		bool led_debug = (bool)(rx_data[6] & 0x80);
+		bool reading_enable = (bool)(rx_data[6] & 0x40);
+		bool metric_enable = (bool)(rx_data[6] & 0x20);
+		bool buffer_enable = (bool)(rx_data[6] & 0x10);
+		uint16_t reading_interval = (uint16_t)((rx_data[7] << 8) | rx_data[8]);
+		uint16_t metric_interval = (uint16_t)((rx_data[9] << 8) | rx_data[10]);
+		uint16_t buffer_interval = (uint16_t)((rx_data[11] << 8) | rx_data[12]);
 
 		if (reading_interval < 8 || reading_interval > 4096) {
 			warn("invalid reading interval %hu\n", reading_interval);
@@ -197,20 +202,20 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config_read(config);
 	}
 
-	if (rx_data[5] == 0x06 && rx_data_len == 4) {
+	if (rx_data[5] == 0x06 && rx_data_len == 6) {
 		sleep(20);
 		transceive_radio(config);
 	}
 
-	if (rx_data[5] == 0x06 && rx_data_len == 17) {
-		uint32_t frequency = (uint32_t)((rx_data[4] << 24) | (rx_data[5] << 16) | (rx_data[6] << 8) | rx_data[7]);
-		uint32_t bandwidth = (uint32_t)((rx_data[8] << 16) | (rx_data[9] << 8) | rx_data[10]);
-		uint8_t coding_rate = rx_data[11];
-		uint8_t spreading_factor = rx_data[12];
-		uint8_t preamble_length = rx_data[13];
-		uint8_t tx_power = rx_data[14];
-		uint8_t sync_word = rx_data[15];
-		bool checksum = (bool)rx_data[16];
+	if (rx_data[5] == 0x06 && rx_data_len == 19) {
+		uint32_t frequency = (uint32_t)((rx_data[6] << 24) | (rx_data[7] << 16) | (rx_data[8] << 8) | rx_data[9]);
+		uint32_t bandwidth = (uint32_t)((rx_data[10] << 16) | (rx_data[11] << 8) | rx_data[12]);
+		uint8_t coding_rate = rx_data[13];
+		uint8_t spreading_factor = rx_data[14];
+		uint8_t preamble_length = rx_data[15];
+		uint8_t tx_power = rx_data[16];
+		uint8_t sync_word = rx_data[17];
+		bool checksum = (bool)rx_data[18];
 
 		if (frequency < 400 * 1000 * 1000 || frequency > 500 * 1000 * 1000) {
 			warn("invalid frequency %u\n", frequency);
