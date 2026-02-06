@@ -162,11 +162,6 @@ int transceive(config_t *config, uplink_t *uplink) {
 		transceive_version(config);
 	}
 
-	if (rx_data[5] == 0x05 && rx_data_len == 6) {
-		sleep(20);
-		transceive_config(config);
-	}
-
 	if (rx_data[5] == 0x05 && rx_data_len == 13) {
 		bool led_debug = (bool)(rx_data[6] & 0x80);
 		bool reading_enable = (bool)(rx_data[6] & 0x40);
@@ -202,9 +197,9 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config_read(config);
 	}
 
-	if (rx_data[5] == 0x06 && rx_data_len == 6) {
+	if (rx_data[5] == 0x05 && (rx_data_len == 6 || rx_data_len == 13)) {
 		sleep(20);
-		transceive_radio(config);
+		transceive_config(config);
 	}
 
 	if (rx_data[5] == 0x06 && rx_data_len == 19) {
@@ -258,6 +253,11 @@ int transceive(config_t *config, uplink_t *uplink) {
 		config_write(config);
 		config_read(config);
 		configure(config);
+	}
+
+	if (rx_data[5] == 0x06 && (rx_data_len == 6 || rx_data_len == 19)) {
+		sleep(20);
+		transceive_radio(config);
 	}
 
 	return 0;
